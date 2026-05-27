@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\ExpenseAttachment;
 use App\Services\BranchAccessService;
+use App\Services\FileAccessService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseAttachmentController extends Controller
 {
-    public function __construct(private readonly BranchAccessService $branchAccessService)
-    {
+    public function __construct(
+        private readonly BranchAccessService $branchAccessService,
+        private readonly FileAccessService $fileAccessService,
+    ) {
     }
 
     public function download(ExpenseAttachment $attachment): StreamedResponse|RedirectResponse
@@ -23,10 +25,13 @@ class ExpenseAttachmentController extends Controller
             abort(403, 'Branch access denied.');
         }
 
-        if (! Storage::exists($attachment->file_path)) {
-            return back()->withErrors(['file' => 'File not found.']);
-        }
-
-        return Storage::download($attachment->file_path, $attachment->file_name);
+        return $this->fileAccessService->download(
+            'finance',
+            $attachment->file_path,
+            $attachment->file_name,
+            $expense->branch_id,
+            'expense_attachment',
+            $attachment->id
+        );
     }
 }

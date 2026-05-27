@@ -4,15 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMessageAttachment;
 use App\Services\ChatRoomService;
+use App\Services\FileAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ChatAttachmentController extends Controller
 {
-    public function __construct(private readonly ChatRoomService $roomService)
-    {
+    public function __construct(
+        private readonly ChatRoomService $roomService,
+        private readonly FileAccessService $fileAccessService,
+    ) {
     }
 
     public function download(Request $request, ChatMessageAttachment $attachment): StreamedResponse|RedirectResponse
@@ -26,10 +28,13 @@ class ChatAttachmentController extends Controller
 
         $this->roomService->ensureMember($request->user(), $room);
 
-        if (! Storage::exists($attachment->file_path)) {
-            return back()->withErrors(['file' => 'File not found.']);
-        }
-
-        return Storage::download($attachment->file_path, $attachment->file_name);
+        return $this->fileAccessService->download(
+            'communication',
+            $attachment->file_path,
+            $attachment->file_name,
+            $room->branch_id ?? null,
+            'chat_attachment',
+            $attachment->id
+        );
     }
 }

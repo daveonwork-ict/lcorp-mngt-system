@@ -6,9 +6,9 @@ use App\Models\Announcement;
 use App\Models\AnnouncementAttachment;
 use App\Services\AuditLogService;
 use App\Services\CommunicationPermissionService;
+use App\Services\FileAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnnouncementAttachmentController extends Controller
@@ -16,6 +16,7 @@ class AnnouncementAttachmentController extends Controller
     public function __construct(
         private readonly CommunicationPermissionService $permissionService,
         private readonly AuditLogService $auditLogService,
+        private readonly FileAccessService $fileAccessService,
     ) {
     }
 
@@ -62,10 +63,13 @@ class AnnouncementAttachmentController extends Controller
             }
         }
 
-        if (! Storage::exists($attachment->file_path)) {
-            return back()->withErrors(['file' => 'File not found.']);
-        }
-
-        return Storage::download($attachment->file_path, $attachment->file_name);
+        return $this->fileAccessService->download(
+            'communication',
+            $attachment->file_path,
+            $attachment->file_name,
+            $announcement->branch_id ?? null,
+            'announcement_attachment',
+            $attachment->id
+        );
     }
 }

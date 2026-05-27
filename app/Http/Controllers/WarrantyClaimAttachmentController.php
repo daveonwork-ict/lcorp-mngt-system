@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\WarrantyClaim;
 use App\Models\WarrantyClaimAttachment;
 use App\Services\BranchAccessService;
+use App\Services\FileAccessService;
 use App\Services\WarrantyClaimService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WarrantyClaimAttachmentController extends Controller
@@ -16,6 +16,7 @@ class WarrantyClaimAttachmentController extends Controller
     public function __construct(
         private readonly WarrantyClaimService $claimService,
         private readonly BranchAccessService $branchAccessService,
+        private readonly FileAccessService $fileAccessService,
     ) {
     }
 
@@ -47,10 +48,13 @@ class WarrantyClaimAttachmentController extends Controller
             abort(403, 'Branch access denied.');
         }
 
-        if (! Storage::exists($attachment->file_path)) {
-            return back()->withErrors(['file' => 'File not found.']);
-        }
-
-        return Storage::download($attachment->file_path, $attachment->file_name);
+        return $this->fileAccessService->download(
+            'warranty',
+            $attachment->file_path,
+            $attachment->file_name,
+            $claim->branch_id,
+            'warranty_claim_attachment',
+            $attachment->id
+        );
     }
 }

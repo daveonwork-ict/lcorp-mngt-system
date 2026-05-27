@@ -1,0 +1,7 @@
+@extends('layouts.app')
+
+@section('page_title', 'Login Activity')
+@section('content')
+<div class="card mb-3"><div class="card-body"><form method="GET" class="form-row"><div class="col-md-3 mb-2"><select class="form-control" name="status"><option value="">Status</option><option value="success">Success</option><option value="failed">Failed</option><option value="logout">Logout</option></select></div><div class="col-md-3 mb-2"><input type="date" class="form-control" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div><div class="col-md-3 mb-2"><input type="date" class="form-control" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div><div class="col-md-3 mb-2"><button class="btn btn-primary btn-block">Filter</button></div></form></div></div>
+<div class="card"><div class="table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>Time</th><th>User</th><th>Identifier</th><th>Status</th><th>IP</th><th>Device</th></tr></thead><tbody>@forelse($logs as $log)<tr><td>{{ $log->logged_at?->format('Y-m-d H:i:s') }}</td><td>{{ $log->user?->display_name ?? '-' }}</td><td>{{ $log->login_identifier }}</td><td>{{ strtoupper($log->status) }}</td><td>{{ $log->ip_address }}</td><td>{{ $log->device_information }}</td></tr>@empty<tr><td colspan="6" class="text-center text-muted">No login activity.</td></tr>@endforelse</tbody></table></div><div class="card-footer">{{ $logs->links() }}</div></div>
+@endsection

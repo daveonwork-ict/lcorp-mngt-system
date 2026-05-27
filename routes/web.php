@@ -6,7 +6,7 @@ Route::redirect('/', '/dashboard/owner');
 
 require __DIR__.'/auth.php';
 
-Route::middleware(['auth', 'branch.access'])->group(function (): void {
+Route::middleware(['auth', 'branch.access', 'session.track'])->group(function (): void {
     require __DIR__.'/dashboard.php';
     require __DIR__.'/inventory.php';
     require __DIR__.'/pos.php';

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuditLogService;
+use App\Services\LoginSecurityService;
+use App\Services\SessionSecurityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +14,11 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly LoginSecurityService $loginSecurityService,
+        private readonly SessionSecurityService $sessionSecurityService,
+    ) {
     }
 
     public function create(): View
@@ -34,6 +39,8 @@ class AuthenticatedSessionController extends Controller
             ]);
 
             $this->auditLogService->record('auth', 'login', [], ['user_id' => $user->id], $user->primary_branch_id, 'User login', $user->id);
+            $this->loginSecurityService->logSuccess($user->id, $request->string('login')->toString());
+            $this->sessionSecurityService->registerCurrentSession();
         }
 
         return redirect()->intended(route('dashboard.owner'));
@@ -44,6 +51,7 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
         if ($user) {
             $this->auditLogService->record('auth', 'logout', [], ['user_id' => $user->id], $user->primary_branch_id, 'User logout', $user->id);
+            $this->loginSecurityService->logLogout($user->id, $user->email ?: $user->username ?: $user->name);
         }
 
         Auth::guard('web')->logout();

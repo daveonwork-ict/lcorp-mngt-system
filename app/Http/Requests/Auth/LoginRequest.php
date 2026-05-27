@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Auth;
 
-use App\Models\ActivityLog;
 use App\Models\User;
+use App\Services\LoginSecurityService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -56,17 +56,7 @@ class LoginRequest extends FormRequest
                 ->when(filter_var($login, FILTER_VALIDATE_EMAIL), fn ($q) => $q->where('email', $login), fn ($q) => $q->where('username', $login)->orWhere('name', $login))
                 ->first();
 
-            ActivityLog::query()->create([
-                'user_id' => $matchedUser?->id,
-                'branch_id' => $matchedUser?->primary_branch_id,
-                'module' => 'auth',
-                'action' => 'login_failed',
-                'module_name' => 'auth',
-                'action_type' => 'login_failed',
-                'description' => 'Failed login attempt',
-                'ip_address' => $this->ip(),
-                'user_agent' => $this->userAgent(),
-            ]);
+            app(LoginSecurityService::class)->logFailure($matchedUser?->id, $login, 'Failed login attempt');
 
             RateLimiter::hit($this->throttleKey());
 

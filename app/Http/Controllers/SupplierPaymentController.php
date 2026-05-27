@@ -6,17 +6,19 @@ use App\Models\Branch;
 use App\Models\PaymentMethod;
 use App\Models\SupplierPayable;
 use App\Models\SupplierPayment;
+use App\Services\FileAccessService;
 use App\Services\SupplierPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupplierPaymentController extends Controller
 {
-    public function __construct(private readonly SupplierPaymentService $service)
-    {
+    public function __construct(
+        private readonly SupplierPaymentService $service,
+        private readonly FileAccessService $fileAccessService,
+    ) {
     }
 
     public function index(Request $request): View
@@ -53,10 +55,17 @@ class SupplierPaymentController extends Controller
 
     public function downloadProof(SupplierPayment $supplierPayment): StreamedResponse|RedirectResponse
     {
-        if (! $supplierPayment->proof_file || ! Storage::exists($supplierPayment->proof_file)) {
+        if (! $supplierPayment->proof_file) {
             return back()->withErrors(['file' => 'Proof file not found.']);
         }
 
-        return Storage::download($supplierPayment->proof_file, basename($supplierPayment->proof_file));
+        return $this->fileAccessService->download(
+            'purchasing',
+            $supplierPayment->proof_file,
+            basename($supplierPayment->proof_file),
+            $supplierPayment->branch_id,
+            'supplier_payment',
+            $supplierPayment->id
+        );
     }
 }
