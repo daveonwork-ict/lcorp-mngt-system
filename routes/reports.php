@@ -18,12 +18,14 @@ Route::post('/reports/schedules', [ReportExportController::class, 'schedule'])
 Route::middleware('permission:view_sales_reports')->group(function (): void {
     Route::get('/reports/sales', [SalesReportController::class, 'index'])->name('reports.sales.index');
     Route::get('/reports/sales/export-csv', [SalesReportController::class, 'exportCsv'])->middleware('permission:export_reports')->name('reports.sales.export-csv');
+    Route::get('/reports/sales/export-excel', [SalesReportController::class, 'exportExcel'])->middleware('permission:export_reports')->name('reports.sales.export-excel');
     Route::get('/reports/sales/print', [SalesReportController::class, 'printView'])->name('reports.sales.print');
 });
 
 Route::middleware('permission:view_inventory_reports')->group(function (): void {
     Route::get('/reports/inventory', [InventoryReportController::class, 'index'])->name('reports.inventory.index');
     Route::get('/reports/inventory/export-csv', [InventoryReportController::class, 'exportCsv'])->middleware('permission:export_reports')->name('reports.inventory.export-csv');
+    Route::get('/reports/inventory/export-excel', [InventoryReportController::class, 'exportExcel'])->middleware('permission:export_reports')->name('reports.inventory.export-excel');
     Route::get('/reports/inventory/print', [InventoryReportController::class, 'printView'])->name('reports.inventory.print');
 });
 

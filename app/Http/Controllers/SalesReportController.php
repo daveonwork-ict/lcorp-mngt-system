@@ -90,6 +90,43 @@ class SalesReportController extends Controller
         ]);
     }
 
+    public function exportExcel(Request $request): Response
+    {
+        $this->authorizeAccess($request);
+
+        $filters = $this->filterService->normalize($request->all());
+        $filters['branch_id'] = $this->filterService->enforceBranchScope($request->user(), $filters['branch_id']);
+
+        $rows = Sale::query()
+            ->with(['branch', 'cashier', 'customer'])
+            ->when($filters['branch_id'], fn ($q, $branchId) => $q->where('branch_id', $branchId))
+            ->when($filters['date_from'], fn ($q, $date) => $q->whereDate('sales_date', '>=', $date))
+            ->when($filters['date_to'], fn ($q, $date) => $q->whereDate('sales_date', '<=', $date))
+            ->latest('id')
+            ->limit(5000)
+            ->get();
+
+        $content = $this->exportService->toExcelTsv(
+            ['Sale #', 'Date', 'Branch', 'Cashier', 'Customer', 'Total', 'Status'],
+            $rows->map(fn (Sale $sale): array => [
+                $sale->sales_number,
+                optional($sale->sales_date)->format('Y-m-d'),
+                $sale->branch?->branch_name ?? $sale->branch?->name,
+                $sale->cashier?->display_name,
+                $sale->customer?->full_name,
+                number_format((float) $sale->total_amount, 2, '.', ''),
+                $sale->sales_status,
+            ])
+        );
+
+        $this->exportService->record('sales', 'excel', $filters, $filters['branch_id'], 'sales-report.xls');
+
+        return response($content, 200, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="sales-report-'.now()->format('Ymd_His').'.xls"',
+        ]);
+    }
+
     public function printView(Request $request): View
     {
         $this->authorizeAccess($request);
