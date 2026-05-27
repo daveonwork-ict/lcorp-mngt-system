@@ -6,11 +6,11 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <form class="form-row mb-3" method="GET">
-                    <div class="col-md-4 mb-2">
+                <form class="form-row mb-3 align-items-end" method="GET">
+                    <div class="col-md-4 col-sm-6 mb-2">
                         <input class="form-control form-control-lg" name="search" placeholder="Search / barcode" value="{{ request('search') }}">
                     </div>
-                    <div class="col-md-4 mb-2">
+                    <div class="col-md-4 col-sm-6 mb-2">
                         <select class="form-control form-control-lg" name="category_id">
                             <option value="">All Categories</option>
                             @foreach($categories as $category)
@@ -18,14 +18,14 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4 mb-2 text-right">
-                        <button class="btn btn-outline-primary btn-lg touch-btn">Filter</button>
+                    <div class="col-md-4 col-sm-12 mb-2 text-right">
+                        <button class="btn btn-outline-primary btn-lg touch-btn">Apply Filter</button>
                     </div>
                 </form>
 
                 <div class="row">
                     @foreach($products as $product)
-                        <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="col-xl-4 col-md-6 col-sm-6 col-12 mb-3">
                             <button type="button" class="btn btn-light border btn-block p-3 text-left touch-btn product-btn"
                                 data-id="{{ $product->id }}"
                                 data-name="{{ $product->product_name }}"
@@ -93,9 +93,9 @@
                 </div>
                 <div class="card-footer">
                     <div class="row">
-                        <div class="col-6 mb-2"><button type="button" class="btn btn-warning btn-block touch-btn" id="holdBtn">Hold</button></div>
-                        <div class="col-6 mb-2"><button type="button" class="btn btn-secondary btn-block touch-btn" id="clearBtn">Clear</button></div>
-                        <div class="col-12"><button class="btn btn-success btn-block btn-lg touch-btn">Checkout</button></div>
+                        <div class="col-6 mb-2"><button type="button" class="btn btn-warning btn-block touch-btn" id="holdBtn">Hold Transaction</button></div>
+                        <div class="col-6 mb-2"><button type="button" class="btn btn-secondary btn-block touch-btn" id="clearBtn">Clear Cart</button></div>
+                        <div class="col-12"><button class="btn btn-success btn-block btn-lg touch-btn">Checkout and Confirm Payment</button></div>
                     </div>
                 </div>
             </div>

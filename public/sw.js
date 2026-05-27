@@ -1,5 +1,17 @@
-const CACHE_NAME = 'rc-rms-shell-v1';
-const SAFE_ASSETS = ['/', '/login', '/offline.html', '/manifest.json'];
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `rc-rms-static-${CACHE_VERSION}`;
+const SAFE_ASSETS = [
+  '/offline',
+  '/manifest.json',
+  '/icons/icon-96x96.svg',
+  '/icons/icon-144x144.svg',
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
+  '/favicon.ico',
+];
+
+const SENSITIVE_PATH = /\/(pos|sales|customers|warranty|cash-flow|expenses|reports|profile|admin|finance|approvals|inventory|purchasing)/i;
+const STATIC_EXT = /\.(?:css|js|woff2?|ttf|eot|svg|png|jpg|jpeg|webp|ico)$/i;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SAFE_ASSETS)));
@@ -17,19 +29,46 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
+  const url = new URL(request.url);
 
-  // Never cache non-GET or transaction-like URLs that may contain sensitive data.
-  if (request.method !== 'GET' || /\/(pos|cash-flow|expenses|warranty|approvals)/i.test(new URL(request.url).pathname)) {
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (SENSITIVE_PATH.test(url.pathname) || /\/(login|register|logout|password)/i.test(url.pathname)) {
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/offline'))
+    );
+    return;
+  }
+
+  if (!STATIC_EXT.test(url.pathname) && !SAFE_ASSETS.includes(url.pathname)) {
     return;
   }
 
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+    caches.match(request).then((cached) => {
+      if (cached) {
+        return cached;
+      }
+
+      return fetch(request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         return response;
-      })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline.html')))
+      }).catch(() => caches.match('/offline'));
+    })
   );
 });

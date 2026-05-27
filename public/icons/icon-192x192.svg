@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="RC Store RMS icon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b5ed7" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#g)" />
+  <path fill="#ffffff" d="M47 46h58c24 0 40 15 40 36 0 18-13 32-32 35l28 29h-24l-25-27H69v27H47V46zm22 18v37h35c12 0 20-7 20-18 0-12-8-19-21-19H69z"/>
+</svg>

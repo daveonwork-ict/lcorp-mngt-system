@@ -9,17 +9,17 @@
 @section('content')
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" class="form-row">
-            <div class="col-md-3 mb-2"><input type="date" name="date_from" class="form-control" value="{{ $filters['date_from'] ?? '' }}"></div>
-            <div class="col-md-3 mb-2"><input type="date" name="date_to" class="form-control" value="{{ $filters['date_to'] ?? '' }}"></div>
-            <div class="col-md-4 mb-2">
+        <form method="GET" class="form-row align-items-end">
+            <div class="col-md-3 col-sm-6 mb-2"><input type="date" name="date_from" class="form-control" value="{{ $filters['date_from'] ?? '' }}"></div>
+            <div class="col-md-3 col-sm-6 mb-2"><input type="date" name="date_to" class="form-control" value="{{ $filters['date_to'] ?? '' }}"></div>
+            <div class="col-md-4 col-sm-12 mb-2">
                 <select name="branch_id" class="form-control">
                     @foreach($branches as $availableBranch)
                         <option value="{{ $availableBranch->id }}" @selected(($filters['branch_id'] ?? $branch->id) == $availableBranch->id)>{{ $availableBranch->branch_name ?? $availableBranch->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-2 mb-2"><button class="btn btn-primary btn-block">Apply</button></div>
+            <div class="col-md-2 col-sm-12 mb-2"><button class="btn btn-primary btn-block touch-btn">Apply Filter</button></div>
         </form>
     </div>
 </div>
@@ -40,7 +40,7 @@
 <div class="row">
     @foreach ($summary['charts'] as $chartKey => $points)
         <div class="col-lg-6 mb-3">
-            <div class="card">
+            <div class="card chart-card">
                 <div class="card-header"><strong>{{ ucwords(str_replace('_', ' ', $chartKey)) }}</strong></div>
                 <div class="card-body"><div style="height: 260px"><canvas id="{{ $chartKey }}"></canvas></div></div>
             </div>
