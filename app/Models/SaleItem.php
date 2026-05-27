@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SaleItem extends Model
 {
@@ -36,5 +37,10 @@ class SaleItem extends Model
     public function imei(): BelongsTo
     {
         return $this->belongsTo(ProductImei::class, 'imei_id');
+    }
+
+    public function warranty(): HasOne
+    {
+        return $this->hasOne(Warranty::class);
     }
 }

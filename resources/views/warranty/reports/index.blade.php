@@ -1,0 +1,16 @@
+@extends('layouts.app')
+
+@section('page_title', 'Warranty Reports')
+@section('content')
+<div class="card mb-3"><div class="card-body"><form method="GET" class="form-row">
+<div class="col-md-2"><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
+<div class="col-md-2"><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
+<div class="col-md-2"><select class="form-control" name="branch_id"><option value="">Branch</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(($filters['branch_id'] ?? null)==$branch->id)>{{ $branch->name }}</option>@endforeach</select></div>
+<div class="col-md-2"><select class="form-control" name="product_id"><option value="">Product</option>@foreach($products as $product)<option value="{{ $product->id }}" @selected(($filters['product_id'] ?? null)==$product->id)>{{ $product->product_name }}</option>@endforeach</select></div>
+<div class="col-md-2"><select class="form-control" name="brand_id"><option value="">Brand</option>@foreach($brands as $brand)<option value="{{ $brand->id }}" @selected(($filters['brand_id'] ?? null)==$brand->id)>{{ $brand->brand_name }}</option>@endforeach</select></div>
+<div class="col-md-2"><select class="form-control" name="status"><option value="">Status</option><option value="active">Active</option><option value="expired">Expired</option><option value="claimed">Claimed</option></select></div>
+<div class="col-md-12 mt-2 text-right"><button class="btn btn-outline-primary">Apply Filters</button> <a class="btn btn-outline-success" href="{{ route('warranty.reports.export-csv', request()->query()) }}">Export CSV</a> <a class="btn btn-outline-success" href="{{ route('warranty.reports.export-excel', request()->query()) }}">Export Excel</a> <a class="btn btn-outline-secondary" href="{{ route('warranty.reports.print', request()->query()) }}" target="_blank">Print</a></div>
+</form></div></div>
+<div class="card mb-3"><div class="card-header">Warranty Records</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>#</th><th>Customer</th><th>Product</th><th>Start</th><th>End</th><th>Status</th></tr></thead><tbody>@foreach($warranties as $warranty)<tr><td>{{ $warranty->warranty_number }}</td><td>{{ $warranty->customer?->full_name }}</td><td>{{ $warranty->product?->product_name }}</td><td>{{ optional($warranty->warranty_start_date)->format('Y-m-d') }}</td><td>{{ optional($warranty->warranty_end_date)->format('Y-m-d') }}</td><td>{{ ucfirst($warranty->warranty_status) }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $warranties->links() }}</div></div>
+<div class="card"><div class="card-header">Claims</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>Claim</th><th>Warranty</th><th>Customer</th><th>Status</th><th>Date</th></tr></thead><tbody>@foreach($claims as $claim)<tr><td>{{ $claim->claim_number }}</td><td>{{ $claim->warranty?->warranty_number }}</td><td>{{ $claim->customer?->full_name }}</td><td>{{ ucfirst(str_replace('_',' ',$claim->claim_status)) }}</td><td>{{ optional($claim->claim_date)->format('Y-m-d') }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $claims->links() }}</div></div>
+@endsection

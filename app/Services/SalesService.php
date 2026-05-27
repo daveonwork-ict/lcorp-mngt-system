@@ -16,6 +16,7 @@ class SalesService
         private readonly DiscountService $discountService,
         private readonly SalesAuditService $salesAuditService,
         private readonly NotificationService $notificationService,
+        private readonly WarrantyRegistrationService $warrantyRegistrationService,
     ) {
     }
 
@@ -121,6 +122,7 @@ class SalesService
 
             $this->paymentService->record($sale, $payment['payments']);
             $this->salesInventoryService->deductForSale($sale);
+            $this->warrantyRegistrationService->registerForSale($sale);
 
             $this->salesAuditService->log('sale_created', [], $sale->toArray(), $sale->branch_id, 'POS sale created');
 
