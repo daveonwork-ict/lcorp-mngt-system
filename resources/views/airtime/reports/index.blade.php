@@ -1,0 +1,28 @@
+@extends('layouts.app')
+
+@section('page_title', 'Airtime Reports')
+@section('content')
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="form-row">
+            <div class="col-md-2"><input class="form-control" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
+            <div class="col-md-2"><input class="form-control" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
+            <div class="col-md-2"><select class="form-control" name="branch_id"><option value="">Branch</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(($filters['branch_id'] ?? null)==$branch->id)>{{ $branch->name }}</option>@endforeach</select></div>
+            <div class="col-md-2"><select class="form-control" name="provider_id"><option value="">Provider</option>@foreach($providers as $provider)<option value="{{ $provider->id }}" @selected(($filters['provider_id'] ?? null)==$provider->id)>{{ $provider->provider_name }}</option>@endforeach</select></div>
+            <div class="col-md-2"><select class="form-control" name="cashier_id"><option value="">Cashier</option>@foreach($cashiers as $cashier)<option value="{{ $cashier->id }}" @selected(($filters['cashier_id'] ?? null)==$cashier->id)>{{ $cashier->display_name }}</option>@endforeach</select></div>
+            <div class="col-md-2"><select class="form-control" name="status"><option value="">Status</option><option value="successful">Successful</option><option value="pending">Pending</option><option value="failed">Failed</option><option value="cancelled">Cancelled</option><option value="reversed">Reversed</option></select></div>
+            <div class="col-md-12 mt-2 text-right">
+                <button class="btn btn-outline-primary">Apply Filters</button>
+                <a class="btn btn-outline-success" href="{{ route('airtime.reports.export-csv', request()->query()) }}">Export CSV</a>
+                <a class="btn btn-outline-secondary" href="{{ route('airtime.reports.print', request()->query()) }}" target="_blank">Print View</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-3"><div class="card-header">Load Transactions</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>No</th><th>Branch</th><th>Provider</th><th>Mobile</th><th>Load</th><th>Commission</th><th>Status</th></tr></thead><tbody>@foreach($transactions as $tx)<tr><td>{{ $tx->transaction_number }}</td><td>{{ $tx->branch?->name }}</td><td>{{ $tx->provider?->provider_name }}</td><td>{{ $tx->customer_mobile_number }}</td><td>{{ number_format($tx->load_amount,2) }}</td><td>{{ number_format($tx->commission_amount,2) }}</td><td>{{ ucfirst($tx->transaction_status) }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $transactions->links() }}</div></div>
+<div class="card mb-3"><div class="card-header">Wallet Balance Report</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>Wallet</th><th>Branch</th><th>Provider</th><th>Balance</th><th>Threshold</th></tr></thead><tbody>@foreach($walletBalances as $wallet)<tr><td>{{ $wallet->wallet_number }}</td><td>{{ $wallet->branch?->name }}</td><td>{{ $wallet->provider?->provider_name }}</td><td>{{ number_format($wallet->current_balance,2) }}</td><td>{{ number_format($wallet->low_balance_threshold,2) }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $walletBalances->links() }}</div></div>
+<div class="card mb-3"><div class="card-header">Wallet Funding Report</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>No</th><th>Wallet</th><th>Branch</th><th>Provider</th><th>Amount</th><th>Status</th></tr></thead><tbody>@foreach($fundings as $funding)<tr><td>{{ $funding->funding_number }}</td><td>{{ $funding->wallet?->wallet_number }}</td><td>{{ $funding->branch?->name }}</td><td>{{ $funding->provider?->provider_name }}</td><td>{{ number_format($funding->amount,2) }}</td><td>{{ ucfirst($funding->status) }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $fundings->links() }}</div></div>
+<div class="card mb-3"><div class="card-header">Wallet Ledger Report</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Wallet</th><th>Type</th><th>In</th><th>Out</th><th>Balance</th></tr></thead><tbody>@foreach($ledgers as $ledger)<tr><td>{{ $ledger->created_at }}</td><td>{{ $ledger->wallet?->wallet_number }}</td><td>{{ $ledger->movement_type }}</td><td>{{ $ledger->amount_in }}</td><td>{{ $ledger->amount_out }}</td><td>{{ $ledger->running_balance }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $ledgers->links() }}</div></div>
+<div class="card"><div class="card-header">Commission Report</div><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Transaction</th><th>Provider</th><th>Branch</th><th>Type</th><th>Value</th><th>Amount</th></tr></thead><tbody>@foreach($commissions as $commission)<tr><td>{{ $commission->created_at }}</td><td>{{ $commission->transaction?->transaction_number }}</td><td>{{ $commission->provider?->provider_name }}</td><td>{{ $commission->branch?->name }}</td><td>{{ ucfirst($commission->commission_type) }}</td><td>{{ $commission->commission_value }}</td><td>{{ number_format($commission->commission_amount,2) }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $commissions->links() }}</div></div>
+@endsection

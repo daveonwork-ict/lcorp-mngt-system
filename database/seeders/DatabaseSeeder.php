@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             BranchSeeder::class,
             SystemSettingsSeeder::class,
             PaymentMethodSeeder::class,
+            AirtimeProviderSeeder::class,
             OwnerAccountSeeder::class,
         ]);
 
