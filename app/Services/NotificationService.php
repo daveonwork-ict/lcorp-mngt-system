@@ -7,6 +7,19 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class NotificationService
 {
+    public function create(?int $userId, ?int $branchId, string $title, string $message, string $type = 'info', array $payload = []): Notification
+    {
+        return Notification::query()->create([
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            'is_read' => false,
+            'payload' => $payload ?: null,
+        ]);
+    }
+
     public function paginateForUser(int $userId): LengthAwarePaginator
     {
         return Notification::query()
