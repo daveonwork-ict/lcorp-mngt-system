@@ -161,6 +161,20 @@ return [
             'manage_backups',
             'view_security_alerts',
         ],
+        'deployment' => [
+            'view_deployment_checklists',
+            'manage_deployment_checklists',
+            'view_data_imports',
+            'manage_data_imports',
+            'view_training_logs',
+            'manage_training_logs',
+            'view_go_live_checklists',
+            'manage_go_live_checklists',
+            'view_support_tickets',
+            'manage_support_tickets',
+            'view_system_acceptance',
+            'manage_system_acceptance',
+        ],
     ],
 
     'default_settings' => [
@@ -188,6 +202,7 @@ return [
         ['slug' => 'users-roles', 'name' => 'Users & Roles', 'route' => 'users-roles.index', 'permission' => 'users-roles.view', 'screens' => ['User Directory', 'Role Matrix', 'Permission Matrix']],
         ['slug' => 'branches', 'name' => 'Branches', 'route' => 'branches.index', 'permission' => 'branches.view', 'screens' => ['Branch List', 'Branch Profile']],
         ['slug' => 'settings', 'name' => 'Settings', 'route' => 'settings.index', 'permission' => 'settings.view', 'screens' => ['System Settings', 'Security Settings']],
+        ['slug' => 'deployment', 'name' => 'Deployment', 'route' => 'deployment.checklists.index', 'permission' => 'view_deployment_checklists', 'screens' => ['Deployment Checklist', 'Data Imports', 'Training Logs', 'Go-Live Checklist', 'Support Tickets', 'Acceptance']],
     ],
 
     'owner_metrics' => [

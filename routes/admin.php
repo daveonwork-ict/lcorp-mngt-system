@@ -8,15 +8,21 @@ use App\Http\Controllers\ApprovalRuleController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\BackupLogController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\DataImportController;
 use App\Http\Controllers\FileAccessController;
+use App\Http\Controllers\DeploymentChecklistController;
+use App\Http\Controllers\GoLiveChecklistController;
 use App\Http\Controllers\LoginSecurityController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PrototypeController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\SecurityAlertController;
 use App\Http\Controllers\SecurityDashboardController;
 use App\Http\Controllers\SessionSecurityController;
+use App\Http\Controllers\SystemAcceptanceController;
+use App\Http\Controllers\TrainingLogController;
 use App\Http\Controllers\UserBranchController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -135,3 +141,22 @@ Route::get('/branches-overview', [BranchController::class, 'index'])
 Route::get('/settings', fn () => app(PrototypeController::class)->module('settings'))
     ->middleware('permission:settings.view')
     ->name('settings.index');
+
+Route::middleware('permission:view_deployment_checklists')->group(function (): void {
+    Route::get('/deployment/checklists', [DeploymentChecklistController::class, 'index'])->name('deployment.checklists.index');
+    Route::put('/deployment/checklists/{deploymentLog}', [DeploymentChecklistController::class, 'update'])->name('deployment.checklists.update');
+    Route::get('/deployment/imports', [DataImportController::class, 'index'])->name('deployment.imports.index');
+    Route::post('/deployment/imports', [DataImportController::class, 'store'])->name('deployment.imports.store');
+    Route::get('/deployment/imports/{dataImportLog}', [DataImportController::class, 'show'])->name('deployment.imports.show');
+    Route::post('/deployment/imports/{dataImportLog}/confirm', [DataImportController::class, 'confirm'])->name('deployment.imports.confirm');
+    Route::get('/deployment/imports/{module}/template', [DataImportController::class, 'template'])->name('deployment.imports.template');
+    Route::get('/deployment/training', [TrainingLogController::class, 'index'])->name('deployment.training.index');
+    Route::post('/deployment/training', [TrainingLogController::class, 'store'])->name('deployment.training.store');
+    Route::get('/deployment/go-live', [GoLiveChecklistController::class, 'index'])->name('deployment.go-live.index');
+    Route::put('/deployment/go-live/{goLiveChecklist}', [GoLiveChecklistController::class, 'update'])->name('deployment.go-live.update');
+    Route::get('/deployment/support', [SupportTicketController::class, 'index'])->name('deployment.support.index');
+    Route::post('/deployment/support', [SupportTicketController::class, 'store'])->name('deployment.support.store');
+    Route::put('/deployment/support/{supportTicket}', [SupportTicketController::class, 'update'])->name('deployment.support.update');
+    Route::get('/deployment/acceptance', [SystemAcceptanceController::class, 'index'])->name('deployment.acceptance.index');
+    Route::post('/deployment/acceptance', [SystemAcceptanceController::class, 'store'])->name('deployment.acceptance.store');
+});
