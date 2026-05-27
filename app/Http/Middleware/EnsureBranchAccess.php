@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\BranchAccessService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,10 +25,14 @@ class EnsureBranchAccess
         $activeBranchId = $request->session()->get('active_branch_id');
 
         if (! $activeBranchId) {
+            if ($user->primary_branch_id) {
+                $request->session()->put('active_branch_id', $user->primary_branch_id);
+            }
+
             return $next($request);
         }
 
-        if (! $user->branches()->where('branches.id', $activeBranchId)->exists()) {
+        if (! app(BranchAccessService::class)->canAccessBranch($user, (int) $activeBranchId)) {
             abort(403, 'Branch access denied.');
         }
 

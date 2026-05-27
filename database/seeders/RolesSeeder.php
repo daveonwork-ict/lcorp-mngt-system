@@ -19,6 +19,7 @@ class RolesSeeder extends Seeder
                     'name' => $role['name'],
                     'description' => $role['description'] ?? null,
                     'is_system' => true,
+                    'status' => 'active',
                 ]
             );
         }

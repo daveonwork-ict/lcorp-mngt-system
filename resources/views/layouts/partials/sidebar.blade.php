@@ -28,6 +28,23 @@
                         </a>
                     </li>
                 @endforeach
+
+                <li class="nav-header">ACCESS CONTROL</li>
+                @if (auth()->user()?->hasPermission('view_users'))
+                    <li class="nav-item"><a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="nav-icon fas fa-users"></i><p>Users</p></a></li>
+                @endif
+                @if (auth()->user()?->hasPermission('view_roles'))
+                    <li class="nav-item"><a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}"><i class="nav-icon fas fa-user-tag"></i><p>Roles</p></a></li>
+                @endif
+                @if (auth()->user()?->hasPermission('assign_permissions'))
+                    <li class="nav-item"><a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}"><i class="nav-icon fas fa-key"></i><p>Permissions</p></a></li>
+                @endif
+                @if (auth()->user()?->hasPermission('view_branches'))
+                    <li class="nav-item"><a href="{{ route('admin.branches.index') }}" class="nav-link {{ request()->routeIs('admin.branches.*') ? 'active' : '' }}"><i class="nav-icon fas fa-code-branch"></i><p>Branch Management</p></a></li>
+                @endif
+                @if (auth()->user()?->hasPermission('view_audit_logs'))
+                    <li class="nav-item"><a href="{{ route('admin.activity-logs.index') }}" class="nav-link {{ request()->routeIs('admin.activity-logs.*') || request()->routeIs('admin.security.*') ? 'active' : '' }}"><i class="nav-icon fas fa-shield-alt"></i><p>Security Logs</p></a></li>
+                @endif
             </ul>
         </nav>
     </div>

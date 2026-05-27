@@ -5,8 +5,28 @@ return [
 
     'default_roles' => [
         ['code' => 'owner', 'name' => 'Owner', 'description' => 'Executive access across all modules'],
-        ['code' => 'manager', 'name' => 'Branch Manager', 'description' => 'Branch operations and approvals'],
+        ['code' => 'super_admin', 'name' => 'Super Admin', 'description' => 'System-wide administration access'],
+        ['code' => 'branch_manager', 'name' => 'Branch Manager', 'description' => 'Branch operations and approvals'],
         ['code' => 'cashier', 'name' => 'Cashier', 'description' => 'POS and customer-facing transactions'],
+        ['code' => 'inventory_staff', 'name' => 'Inventory Staff', 'description' => 'Inventory operations access'],
+        ['code' => 'accounting_staff', 'name' => 'Accounting Staff', 'description' => 'Finance and reporting access'],
+        ['code' => 'auditor', 'name' => 'Auditor', 'description' => 'Read-only compliance access'],
+        ['code' => 'staff_user', 'name' => 'Staff User', 'description' => 'Limited module access'],
+    ],
+
+    'permission_catalog' => [
+        'dashboard' => ['view_dashboard', 'view_executive_dashboard', 'view_branch_dashboard'],
+        'user_management' => ['view_users', 'create_user', 'edit_user', 'deactivate_user', 'reset_user_password'],
+        'role_management' => ['view_roles', 'create_role', 'edit_role', 'assign_permissions'],
+        'branch_management' => ['view_branches', 'create_branch', 'edit_branch', 'deactivate_branch'],
+        'inventory' => ['view_inventory', 'create_product', 'edit_product', 'stock_in', 'stock_adjustment', 'transfer_stock'],
+        'pos' => ['view_pos', 'create_sale', 'void_sale', 'refund_sale'],
+        'airtime' => ['view_airtime', 'create_load_transaction', 'manage_wallet'],
+        'finance' => ['view_cash_flow', 'create_expense', 'approve_expense', 'submit_daily_closing'],
+        'warranty' => ['view_warranty', 'create_warranty_claim', 'approve_warranty_claim'],
+        'communication' => ['view_announcements', 'create_announcement', 'access_chat'],
+        'reports' => ['view_reports', 'export_reports'],
+        'security' => ['view_audit_logs', 'view_security_dashboard'],
     ],
 
     'default_settings' => [

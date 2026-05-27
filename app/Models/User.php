@@ -21,11 +21,23 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'employee_code',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'suffix',
+        'full_name',
         'name',
+        'username',
         'email',
+        'mobile_number',
+        'profile_photo',
         'role_id',
+        'primary_branch_id',
+        'status',
         'is_active',
         'last_login_at',
+        'last_login_ip',
         'password',
     ];
 
@@ -64,6 +76,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Branch::class, 'user_branches')
             ->withPivot(['is_primary'])
             ->withTimestamps();
+    }
+
+    public function primaryBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'primary_branch_id');
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->full_name ?: trim(($this->first_name ?? '').' '.($this->last_name ?? '')) ?: $this->name;
     }
 
     public function hasPermission(string $permissionCode): bool
