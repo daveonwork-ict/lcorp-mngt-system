@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -81,6 +82,28 @@ class User extends Authenticatable
     public function primaryBranch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'primary_branch_id');
+    }
+
+    public function announcementReads(): HasMany
+    {
+        return $this->hasMany(AnnouncementRead::class);
+    }
+
+    public function chatRoomMemberships(): HasMany
+    {
+        return $this->hasMany(ChatRoomMember::class);
+    }
+
+    public function chatRooms(): BelongsToMany
+    {
+        return $this->belongsToMany(ChatRoom::class, 'chat_room_members')
+            ->withPivot(['role_in_room', 'joined_at', 'status'])
+            ->withTimestamps();
+    }
+
+    public function communicationNotifications(): HasMany
+    {
+        return $this->hasMany(CommunicationNotification::class);
     }
 
     public function getDisplayNameAttribute(): string
