@@ -1,0 +1,8 @@
+@extends('layouts.app')
+
+@section('page_title', 'Audit Reports')
+@section('content')
+<div class="row mb-3"><div class="col-md-6"><div class="small-box bg-danger"><div class="inner"><h3>{{ $failedLogins }}</h3><p>Failed logins</p></div></div></div><div class="col-md-6"><div class="small-box bg-warning"><div class="inner"><h3>{{ $permissionChanges }}</h3><p>Permission changes</p></div></div></div></div>
+<div class="card mb-3"><div class="card-body"><form method="GET" class="form-row"><div class="col-md-3 mb-2"><input type="date" class="form-control" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div><div class="col-md-3 mb-2"><input type="date" class="form-control" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div><div class="col-md-3 mb-2"><input class="form-control" name="branch_id" value="{{ $filters['branch_id'] ?? '' }}" placeholder="Branch ID"></div><div class="col-md-3 mb-2"><button class="btn btn-outline-primary btn-block">Apply</button></div></form></div></div>
+<div class="card"><div class="card-body table-responsive p-0"><table class="table table-sm mb-0"><thead><tr><th>When</th><th>User</th><th>Branch</th><th>Module</th><th>Action</th><th>IP</th></tr></thead><tbody>@foreach($logs as $log)<tr><td>{{ $log->created_at?->format('Y-m-d H:i:s') }}</td><td>{{ $log->user?->display_name }}</td><td>{{ $log->branch?->branch_name ?? $log->branch?->name }}</td><td>{{ $log->module_name }}</td><td>{{ $log->action_type }}</td><td>{{ $log->ip_address }}</td></tr>@endforeach</tbody></table></div><div class="card-footer">{{ $logs->links() }}</div></div>
+@endsection

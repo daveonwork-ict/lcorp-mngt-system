@@ -1,36 +1,25 @@
 @extends('layouts.app')
 
-@section('page_title', 'Branch Dashboard')
-@section('breadcrumbs')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard.owner') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Branch</li>
-@endsection
-
+@section('page_title', 'Executive Dashboard')
 @section('content')
 <div class="card mb-3">
     <div class="card-body">
         <form method="GET" class="form-row">
             <div class="col-md-3 mb-2"><input type="date" name="date_from" class="form-control" value="{{ $filters['date_from'] ?? '' }}"></div>
             <div class="col-md-3 mb-2"><input type="date" name="date_to" class="form-control" value="{{ $filters['date_to'] ?? '' }}"></div>
-            <div class="col-md-4 mb-2">
-                <select name="branch_id" class="form-control">
-                    @foreach($branches as $availableBranch)
-                        <option value="{{ $availableBranch->id }}" @selected(($filters['branch_id'] ?? $branch->id) == $availableBranch->id)>{{ $availableBranch->branch_name ?? $availableBranch->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <div class="col-md-4 mb-2"><select name="branch_id" class="form-control"><option value="">All branches</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(($filters['branch_id'] ?? null)==$branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select></div>
             <div class="col-md-2 mb-2"><button class="btn btn-primary btn-block">Apply</button></div>
         </form>
     </div>
 </div>
 
 <div class="row">
-    @foreach ($summary['cards'] as $metric)
+    @foreach($summary['cards'] as $card)
         <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-            <div class="small-box bg-white border metric-card">
+            <div class="small-box bg-white border">
                 <div class="inner">
-                    <p class="mb-1 text-muted">{{ $metric['label'] }}</p>
-                    <h4>{{ $metric['value'] }}</h4>
+                    <p class="mb-1 text-muted">{{ $card['label'] }}</p>
+                    <h4>{{ $card['value'] }}</h4>
                 </div>
             </div>
         </div>
@@ -38,11 +27,11 @@
 </div>
 
 <div class="row">
-    @foreach ($summary['charts'] as $chartKey => $points)
+    @foreach($summary['charts'] as $chartKey => $points)
         <div class="col-lg-6 mb-3">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header"><strong>{{ ucwords(str_replace('_', ' ', $chartKey)) }}</strong></div>
-                <div class="card-body"><div style="height: 260px"><canvas id="{{ $chartKey }}"></canvas></div></div>
+                <div class="card-body"><div style="height:260px"><canvas id="{{ $chartKey }}"></canvas></div></div>
             </div>
         </div>
     @endforeach
@@ -68,18 +57,19 @@
     </div>
     <div class="col-lg-6 mb-3">
         <div class="card h-100">
-            <div class="card-header"><strong>Recent Branch Sales</strong></div>
+            <div class="card-header"><strong>Recent Sales</strong></div>
             <div class="card-body table-responsive p-0">
                 <table class="table table-sm mb-0">
-                    <thead><tr><th>Sale #</th><th>Cashier</th><th>Total</th></tr></thead>
+                    <thead><tr><th>Sale #</th><th>Branch</th><th>Cashier</th><th>Total</th></tr></thead>
                     <tbody>
-                        @foreach($summary['tables']['recent_branch_sales'] as $sale)
-                            <tr>
-                                <td>{{ $sale->sales_number }}</td>
-                                <td>{{ $sale->cashier?->display_name }}</td>
-                                <td>{{ number_format((float) $sale->total_amount, 2) }}</td>
-                            </tr>
-                        @endforeach
+                    @foreach($summary['tables']['recent_sales'] as $sale)
+                        <tr>
+                            <td>{{ $sale->sales_number }}</td>
+                            <td>{{ $sale->branch?->branch_name ?? $sale->branch?->name }}</td>
+                            <td>{{ $sale->cashier?->display_name }}</td>
+                            <td>{{ number_format((float) $sale->total_amount, 2) }}</td>
+                        </tr>
+                    @endforeach
                     </tbody>
                 </table>
             </div>
@@ -105,8 +95,8 @@ Object.entries(chartPayloads).forEach(([chartKey, points]) => {
             datasets: [{
                 label: chartKey.replaceAll('_', ' '),
                 data: values,
-                borderColor: 'rgba(40,167,69,1)',
-                backgroundColor: 'rgba(40,167,69,0.2)',
+                borderColor: 'rgba(13,110,253,1)',
+                backgroundColor: 'rgba(13,110,253,0.2)',
                 tension: 0.3,
                 fill: true
             }]

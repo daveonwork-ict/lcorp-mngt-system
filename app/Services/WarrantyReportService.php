@@ -9,8 +9,11 @@ class WarrantyReportService
 {
     public function warranties(array $filters = [])
     {
+        $allowedBranchIds = $this->allowedBranchIds();
+
         return Warranty::query()
             ->with(['branch', 'customer', 'product.brand', 'sale'])
+            ->when($allowedBranchIds !== null, fn ($q) => $q->whereIn('branch_id', $allowedBranchIds))
             ->when($filters['date_from'] ?? null, fn ($q, $date) => $q->whereDate('warranty_start_date', '>=', $date))
             ->when($filters['date_to'] ?? null, fn ($q, $date) => $q->whereDate('warranty_start_date', '<=', $date))
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
@@ -24,8 +27,11 @@ class WarrantyReportService
 
     public function claims(array $filters = [])
     {
+        $allowedBranchIds = $this->allowedBranchIds();
+
         return WarrantyClaim::query()
             ->with(['warranty.product.brand', 'customer', 'branch'])
+            ->when($allowedBranchIds !== null, fn ($q) => $q->whereIn('branch_id', $allowedBranchIds))
             ->when($filters['date_from'] ?? null, fn ($q, $date) => $q->whereDate('claim_date', '>=', $date))
             ->when($filters['date_to'] ?? null, fn ($q, $date) => $q->whereDate('claim_date', '<=', $date))
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
@@ -33,6 +39,16 @@ class WarrantyReportService
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
+    }
+
+    private function allowedBranchIds(): ?array
+    {
+        $user = auth()->user();
+        if (! $user || $user->role?->code === config('rms.owner_role_code')) {
+            return null;
+        }
+
+        return $user->branches()->pluck('branches.id')->all() ?: [-1];
     }
 
     public function dashboard(): array

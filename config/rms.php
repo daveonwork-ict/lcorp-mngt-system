@@ -117,6 +117,16 @@ return [
         ],
         'reports' => ['view_reports', 'export_reports'],
         'security' => ['view_audit_logs', 'view_security_dashboard'],
+        'analytics' => [
+            'view_sales_reports',
+            'view_inventory_reports',
+            'view_airtime_reports',
+            'view_financial_reports',
+            'view_warranty_reports',
+            'view_communication_reports',
+            'view_audit_reports',
+            'manage_dashboard_preferences',
+        ],
     ],
 
     'default_settings' => [
@@ -138,7 +148,7 @@ return [
         ['slug' => 'office-supplies', 'name' => 'Office Supplies', 'route' => 'office-supplies.index', 'permission' => 'office-supplies.view', 'screens' => ['Supplies Catalog', 'Issuance Logs']],
         ['slug' => 'announcements', 'name' => 'Announcements', 'route' => 'announcements.index', 'permission' => 'view_announcements', 'screens' => ['Announcement Feed', 'Read Tracking']],
         ['slug' => 'chat', 'name' => 'Chat', 'route' => 'chat.index', 'permission' => 'access_chat', 'screens' => ['Room List', 'Conversation Panel', 'Notifications']],
-        ['slug' => 'reports', 'name' => 'Reports', 'route' => 'reports.index', 'permission' => 'reports.view', 'screens' => ['Sales', 'Inventory', 'Airtime', 'Expenses', 'Warranty', 'Branch']],
+        ['slug' => 'reports', 'name' => 'Reports', 'route' => 'reports.index', 'permission' => 'view_reports', 'screens' => ['Sales', 'Inventory', 'Airtime', 'Expenses', 'Warranty', 'Branch']],
         ['slug' => 'approvals', 'name' => 'Approvals', 'route' => 'approvals.index', 'permission' => 'approvals.view', 'screens' => ['Pending Requests', 'Approval Timeline']],
         ['slug' => 'audit-trail', 'name' => 'Audit Trail', 'route' => 'audit-trail.index', 'permission' => 'audit-trail.view', 'screens' => ['Action Ledger', 'IP Tracking']],
         ['slug' => 'users-roles', 'name' => 'Users & Roles', 'route' => 'users-roles.index', 'permission' => 'users-roles.view', 'screens' => ['User Directory', 'Role Matrix', 'Permission Matrix']],
