@@ -96,6 +96,19 @@
                                         </div>
                                     </dd>
                                 </dl>
+
+                                @if(($employeePanel['profile']['last_sync']['freshness']['label'] ?? null) === 'Outdated')
+                                    <div class="alert alert-warning mt-3 mb-0 py-2 px-3">
+                                        <div class="small font-weight-semibold mb-1">Sync data looks outdated.</div>
+                                        <div class="small text-muted mb-2">Please refresh attendance or schedule records to keep your shift status accurate.</div>
+                                        <div class="d-flex flex-wrap">
+                                            <a href="{{ route('hr.attendance.index') }}" class="btn btn-xs btn-outline-warning mr-2 mb-1">Open Attendance</a>
+                                            @if(collect($employeePanel['profile']['quick_links'])->firstWhere('label', 'Schedules'))
+                                                <a href="{{ route('hr.schedules.index') }}" class="btn btn-xs btn-outline-warning mb-1">Open Schedules</a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             <div class="col-lg-3">
                                 <div class="small text-muted text-uppercase mb-2">Quick Links</div>

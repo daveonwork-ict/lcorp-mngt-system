@@ -28,6 +28,7 @@ use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class EmployeeDashboardFeatureTest extends TestCase
@@ -320,5 +321,64 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Read')
             ->assertSee('Seen')
             ->assertSee('Acknowledge');
+    }
+
+    public function test_outdated_sync_shows_refresh_callout_on_profile_card(): void
+    {
+        $branch = Branch::query()->where('code', 'MAIN')->firstOrFail();
+        $role = Role::query()->where('code', 'staff_user')->firstOrFail();
+
+        $permissionIds = Permission::query()
+            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_schedules'])
+            ->pluck('id')
+            ->all();
+
+        $role->permissions()->syncWithoutDetaching($permissionIds);
+
+        $user = User::factory()->create([
+            'role_id' => $role->id,
+            'primary_branch_id' => $branch->id,
+            'status' => 'active',
+            'is_active' => true,
+            'username' => 'dashboard.outdated',
+            'full_name' => 'Dashboard Outdated',
+            'name' => 'Dashboard Outdated',
+        ]);
+
+        $user->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
+
+        $attendance = AttendanceLog::query()->create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'attendance_date' => Carbon::today()->toDateString(),
+            'time_in' => Carbon::today()->setTime(8, 30),
+            'time_out' => Carbon::today()->setTime(17, 30),
+            'device_info_in' => ['raw' => 'Dashboard Browser'],
+            'attendance_status' => 'present',
+        ]);
+
+        $todaySchedule = EmployeeSchedule::query()->create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'schedule_date' => Carbon::today()->toDateString(),
+            'schedule_type' => 'fixed',
+            'time_in' => '08:00',
+            'time_out' => '17:00',
+            'is_rest_day' => false,
+        ]);
+
+        $sixHoursAgo = now()->subHours(6);
+
+        DB::table('attendance_logs')->where('id', $attendance->id)->update(['updated_at' => $sixHoursAgo]);
+        DB::table('employee_schedules')->where('id', $todaySchedule->id)->update(['updated_at' => $sixHoursAgo]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
+            ->assertOk()
+            ->assertSee('Last Attendance Sync')
+            ->assertSee('Outdated')
+            ->assertSee('Sync data looks outdated.')
+            ->assertSee('Open Attendance')
+            ->assertSee('Open Schedules');
     }
 }
