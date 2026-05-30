@@ -37,5 +37,11 @@ class DatabaseSeeder extends Seeder
                 $branch->id => ['is_primary' => true],
             ]);
         }
+
+        if ((bool) env('RMS_SEED_FULL_DEMO', false)) {
+            $this->call([
+                FullDemoOperationsSeeder::class,
+            ]);
+        }
     }
 }
