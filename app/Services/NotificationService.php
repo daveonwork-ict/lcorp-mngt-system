@@ -104,22 +104,19 @@ class NotificationService
 
     public function paginateCommunicationForUser(User $user): LengthAwarePaginator
     {
-        return CommunicationNotification::query()
+        return $this->communicationQueryForUser($user)
             ->with(['announcement', 'room', 'messageRecord'])
-            ->where(function (Builder $query) use ($user): void {
-                $query->where('user_id', $user->id)
-                    ->orWhereNull('user_id');
-            })
-            ->when($user->role?->code !== config('rms.owner_role_code'), function (Builder $query) use ($user): void {
-                $branchIds = $user->branches()->pluck('branches.id')->all();
-                if (! empty($branchIds)) {
-                    $query->where(function (Builder $scope) use ($branchIds): void {
-                        $scope->whereNull('branch_id')->orWhereIn('branch_id', $branchIds);
-                    });
-                }
-            })
             ->latest('id')
             ->paginate(20);
+    }
+
+    public function recentCommunicationForUser(User $user, int $limit = 4): Collection
+    {
+        return $this->communicationQueryForUser($user)
+            ->with(['announcement', 'room', 'messageRecord'])
+            ->latest('id')
+            ->limit($limit)
+            ->get();
     }
 
     public function markCommunicationRead(CommunicationNotification $notification, User $user): void
@@ -150,12 +147,26 @@ class NotificationService
 
     public function communicationUnreadCount(User $user): int
     {
+        return $this->communicationQueryForUser($user)
+            ->where('is_read', false)
+            ->count();
+    }
+
+    private function communicationQueryForUser(User $user): Builder
+    {
         return CommunicationNotification::query()
             ->where(function (Builder $query) use ($user): void {
                 $query->where('user_id', $user->id)
                     ->orWhereNull('user_id');
             })
-            ->where('is_read', false)
-            ->count();
+            ->when($user->role?->code !== config('rms.owner_role_code'), function (Builder $query) use ($user): void {
+                $branchIds = $user->branches()->pluck('branches.id')->all();
+
+                if (! empty($branchIds)) {
+                    $query->where(function (Builder $scope) use ($branchIds): void {
+                        $scope->whereNull('branch_id')->orWhereIn('branch_id', $branchIds);
+                    });
+                }
+            });
     }
 }

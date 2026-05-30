@@ -210,6 +210,66 @@
                 </div>
             @endif
         </div>
+
+        @if($employeePanel['can_view_notifications'])
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Recent Notifications</strong>
+                            <a href="{{ route('communication.notifications.index') }}" class="btn btn-sm btn-outline-primary">Open Notification Center</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <span class="badge badge-light border">Unread Notifications: {{ $employeePanel['unread_notifications'] }}</span>
+                            </div>
+
+                            <div class="row">
+                                @forelse($employeePanel['recent_notifications'] as $notification)
+                                    <div class="col-lg-6 mb-3">
+                                        <div class="border rounded h-100 px-3 py-3 {{ $notification->is_read ? 'text-muted' : '' }}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <div class="font-weight-semibold">{{ $notification->title }}</div>
+                                                    <div class="small text-muted">{{ ucfirst(str_replace('_', ' ', $notification->category)) }}</div>
+                                                </div>
+                                                @if($notification->is_read)
+                                                    <span class="badge badge-light border">Read</span>
+                                                @else
+                                                    <span class="badge badge-warning">Unread</span>
+                                                @endif
+                                            </div>
+
+                                            <p class="mb-2">{{ $notification->message }}</p>
+                                            <div class="small text-muted mb-3">{{ optional($notification->created_at)->format('Y-m-d H:i') ?: '-' }}</div>
+
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                @if(($notification->payload['route'] ?? null))
+                                                    <a href="{{ $notification->payload['route'] }}" class="btn btn-xs btn-outline-secondary">Open</a>
+                                                @else
+                                                    <span></span>
+                                                @endif
+
+                                                @if(! $notification->is_read)
+                                                    <form method="POST" action="{{ route('communication.notifications.read', $notification) }}" class="d-inline">
+                                                        @csrf
+                                                        <button class="btn btn-xs btn-outline-success">Mark Read</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="col-12">
+                                        <p class="text-muted mb-0">No communication notifications yet.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 @endif

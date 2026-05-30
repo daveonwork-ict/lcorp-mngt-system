@@ -13,6 +13,7 @@ use App\Models\Payslip;
 use App\Services\AnnouncementTargetService;
 use App\Services\AuditLogService;
 use App\Services\DashboardAnalyticsService;
+use App\Services\NotificationService;
 use App\Services\ReportFilterService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,6 +25,7 @@ class BranchDashboardController extends Controller
         private readonly ReportFilterService $filterService,
         private readonly AuditLogService $auditLogService,
         private readonly AnnouncementTargetService $announcementTargetService,
+        private readonly NotificationService $notificationService,
     ) {
     }
 
@@ -110,6 +112,14 @@ class BranchDashboardController extends Controller
                 ->get()
             : collect();
 
+        $canViewNotifications = $user->hasPermission('view_notification_center');
+        $unreadNotifications = $canViewNotifications
+            ? $this->notificationService->communicationUnreadCount($user)
+            : 0;
+        $recentNotifications = $canViewNotifications
+            ? $this->notificationService->recentCommunicationForUser($user, 4)
+            : collect();
+
         $announcementQuery = Announcement::query()
             ->with([
                 'creator',
@@ -153,6 +163,10 @@ class BranchDashboardController extends Controller
             $cards[] = ['label' => 'Unread Messages', 'value' => $unreadMessages, 'url' => route('chat.index')];
         }
 
+        if ($canViewNotifications) {
+            $cards[] = ['label' => 'Unread Notifications', 'value' => $unreadNotifications, 'url' => route('communication.notifications.index')];
+        }
+
         return [
             'cards' => $cards,
             'latest_attendance' => $latestAttendance,
@@ -161,6 +175,9 @@ class BranchDashboardController extends Controller
             'can_access_chat' => $canAccessChat,
             'active_chat_rooms' => count($roomIds),
             'recent_messages' => $recentMessages,
+            'can_view_notifications' => $canViewNotifications,
+            'recent_notifications' => $recentNotifications,
+            'unread_notifications' => $unreadNotifications,
         ];
     }
 }

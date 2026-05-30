@@ -11,6 +11,7 @@ use App\Models\ChatMessage;
 use App\Models\ChatMessageRead;
 use App\Models\ChatRoom;
 use App\Models\ChatRoomMember;
+use App\Models\CommunicationNotification;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\PayrollItem;
@@ -47,7 +48,7 @@ class EmployeeDashboardFeatureTest extends TestCase
         $role = Role::query()->where('code', 'staff_user')->firstOrFail();
 
         $permissionIds = Permission::query()
-            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements', 'access_chat'])
+            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements', 'access_chat', 'view_notification_center'])
             ->pluck('id')
             ->all();
 
@@ -197,6 +198,19 @@ class EmployeeDashboardFeatureTest extends TestCase
             'status' => 'sent',
         ]);
 
+        $notification = CommunicationNotification::query()->create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'chat_room_id' => $room->id,
+            'chat_message_id' => $message->id,
+            'category' => 'group_message',
+            'title' => 'New chat message',
+            'message' => 'Dashboard Teammate sent you a chat update.',
+            'payload' => ['route' => route('chat.rooms.show', $room)],
+            'is_read' => false,
+            'created_by' => $teammate->id,
+        ]);
+
         $this->actingAs($user)
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
             ->assertOk()
@@ -210,11 +224,16 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Payslips Available')
             ->assertSee('Unread Announcements')
             ->assertSee('Unread Messages')
+            ->assertSee('Unread Notifications')
             ->assertSee('Latest Announcements')
             ->assertSee('Payroll release reminder')
             ->assertSee('Recent Chat Activity')
             ->assertSee('Team Pulse')
             ->assertSee('Please confirm your shift handoff before lunch.')
+            ->assertSee('Recent Notifications')
+            ->assertSee('New chat message')
+            ->assertSee('Dashboard Teammate sent you a chat update.')
+            ->assertSee('Open Notification Center')
             ->assertSee('Mark Room Read')
             ->assertSee('Mark Read')
             ->assertSee('Acknowledge');
@@ -231,6 +250,12 @@ class EmployeeDashboardFeatureTest extends TestCase
             ])
             ->assertRedirect();
 
+        $this->actingAs($user)
+            ->post(route('communication.notifications.read', $notification), [
+                '_token' => csrf_token(),
+            ])
+            ->assertRedirect();
+
         $this->assertDatabaseHas('announcement_reads', [
             'announcement_id' => $announcement->id,
             'user_id' => $user->id,
@@ -240,6 +265,12 @@ class EmployeeDashboardFeatureTest extends TestCase
         $this->assertDatabaseHas((new ChatMessageRead())->getTable(), [
             'chat_message_id' => $message->id,
             'user_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('communication_notifications', [
+            'id' => $notification->id,
+            'user_id' => $user->id,
+            'is_read' => true,
         ]);
 
         $this->actingAs($user)
