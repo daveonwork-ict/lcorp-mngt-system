@@ -46,6 +46,7 @@
 
                 <button type="submit" class="btn btn-warning btn-block font-weight-bold">Sign In</button>
                 <a href="{{ route('login.demo') }}" class="btn btn-outline-secondary btn-block mt-2">Open Demo Login Page</a>
+                <a href="{{ asset('manuals/rms-user-manual.html') }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-block mt-2">Open RMS User Manual</a>
                 <p class="text-muted small mt-3 mb-0 text-center">Developed by Daveonwork IT Solutions</p>
             </form>
         </div>

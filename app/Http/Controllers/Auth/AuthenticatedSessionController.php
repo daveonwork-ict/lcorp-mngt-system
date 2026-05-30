@@ -126,6 +126,7 @@ class AuthenticatedSessionController extends Controller
         return User::query()
             ->with('role')
             ->where('is_active', true)
+            ->where('username', '!=', 'superadmin')
             ->where(function ($query): void {
                 $query->where('email', 'like', '%@rcstore.local')
                     ->orWhere('username', 'like', 'demo_%')

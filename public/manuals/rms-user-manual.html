@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RMS User Manual</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #1e2a3a;
+      --muted: #5c6b80;
+      --brand: #0b5ed7;
+      --brand-2: #0a3f91;
+      --line: #d9e1ec;
+      --ok: #0f766e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 280px at -10% -10%, rgba(11, 94, 215, 0.12), transparent 60%),
+        radial-gradient(800px 240px at 120% 0%, rgba(15, 118, 110, 0.10), transparent 62%),
+        var(--bg);
+      line-height: 1.55;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 22px 16px 46px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--brand-2), var(--brand));
+      color: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 14px 26px rgba(10, 63, 145, 0.24);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-logo {
+      max-width: 360px;
+      width: 100%;
+      height: auto;
+      display: block;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25));
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .chips {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.82rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 5px 18px rgba(19, 40, 74, 0.08);
+    }
+
+    .toc {
+      position: sticky;
+      top: 12px;
+      padding: 14px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+
+    .toc h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .toc a {
+      display: block;
+      color: var(--brand-2);
+      text-decoration: none;
+      padding: 4px 0;
+      font-size: 0.92rem;
+    }
+
+    .toc a:hover { text-decoration: underline; }
+
+    .content {
+      padding: 18px 18px 22px;
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 1.22rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 7px;
+    }
+
+    h3 {
+      margin: 15px 0 7px;
+      font-size: 1rem;
+      color: #213e63;
+    }
+
+    p { margin: 8px 0; }
+
+    ul, ol { margin: 6px 0 10px 20px; }
+
+    code {
+      background: #eef4ff;
+      border: 1px solid #d7e4ff;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 0.88em;
+    }
+
+    .note {
+      border-left: 4px solid var(--ok);
+      background: #ecfffd;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .warn {
+      border-left: 4px solid #f59e0b;
+      background: #fff7e8;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .danger {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+    }
+
+    .table-guide {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 0.94rem;
+    }
+
+    .table-guide th,
+    .table-guide td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table-guide thead th {
+      background: #edf3ff;
+      color: #163965;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-align: center;
+    }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <img src="/uploads/branding/sidenav-logo-20260530112541-A7H9MB.png" alt="Daveonwork IT Solutions" class="hero-logo">
+      <h1>RMS Comprehensive User Manual</h1>
+      <p>HTML version of the RMS user guide for daily operations, approvals, reporting, HRMS, and admin workflows.</p>
+      <div class="chips">
+        <span class="chip">URL: /manuals/rms-user-manual.html</span>
+        <span class="chip">Updated: 2026-05-30</span>
+        <span class="chip">Format: Web Manual</span>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="card toc">
+        <h2>Contents</h2>
+        <a href="#purpose">1. Purpose</a>
+        <a href="#howtouse">2. How to Use This Manual</a>
+        <a href="#quick-start">3. First-Time User Quick Start</a>
+        <a href="#roles">4. Role-Based Guide</a>
+        <a href="#rules">5. Core Operating Rules</a>
+        <a href="#navigation">6. Navigation and Route Shortcuts</a>
+        <a href="#playbooks">7. Module Playbooks</a>
+        <a href="#scenarios">8. End-to-End Scenarios</a>
+        <a href="#checklists">9. Daily, Weekly, Monthly Checklists</a>
+        <a href="#mistakes">10. Common Mistakes to Avoid</a>
+        <a href="#troubleshooting">11. Troubleshooting and Escalation</a>
+        <a href="#glossary">12. Glossary</a>
+        <a href="#references">13. References</a>
+      </aside>
+
+      <main class="card content">
+        <h2 id="purpose">1. Purpose</h2>
+        <p>This manual is designed to help new and experienced users operate RMS correctly, safely, and consistently. It provides beginner-friendly steps, role-based workflows, and practical scenarios that mirror real daily operations.</p>
+        <div class="note"><strong>Goal:</strong> If a first-time user follows this manual step-by-step, they should be able to complete a full workday flow from login to reporting without assistance.</div>
+
+        <h2 id="howtouse">2. How to Use This Manual</h2>
+        <ol>
+          <li>Start with section 3 if you are new to RMS.</li>
+          <li>Go to section 4 and read only your role first.</li>
+          <li>Use section 7 playbooks while doing real tasks.</li>
+          <li>Use section 11 troubleshooting before escalating.</li>
+        </ol>
+        <div class="warn"><strong>Tip for trainers:</strong> Pair this manual with live sandbox practice and ask trainees to complete scenarios in section 8 one by one.</div>
+
+        <h2 id="quick-start">3. First-Time User Quick Start</h2>
+        <h3>Before You Begin</h3>
+        <ul>
+          <li>Confirm your username and password.</li>
+          <li>Confirm your assigned branch and role.</li>
+          <li>Confirm internet/network connection and printer status (if needed).</li>
+        </ul>
+        <h3>First 10 Minutes in RMS</h3>
+        <ol>
+          <li>Open <code>/login</code> and sign in.</li>
+          <li>Check active branch context.</li>
+          <li>Open your dashboard: <code>/dashboard/branch</code> or <code>/dashboard/owner</code>.</li>
+          <li>Review pending approvals at <code>/approvals</code>.</li>
+          <li>Open your core module (POS, Inventory, Airtime, Finance, or HR).</li>
+        </ol>
+
+        <h2 id="roles">4. Role-Based Guide</h2>
+        <table class="table-guide">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Primary Focus</th>
+              <th>Daily Must-Do</th>
+              <th>Main Routes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cashier</td>
+              <td>Fast, accurate checkout</td>
+              <td>Process sales, handle holds, escalate returns/voids</td>
+              <td><code>/pos</code>, <code>/sales</code>, <code>/sales/held-transactions</code></td>
+            </tr>
+            <tr>
+              <td>Branch Manager</td>
+              <td>Branch performance and approvals</td>
+              <td>Clear approvals queue, monitor variances, close day</td>
+              <td><code>/dashboard/branch</code>, <code>/approvals</code>, <code>/cash-flow/daily-closing</code></td>
+            </tr>
+            <tr>
+              <td>Inventory Staff</td>
+              <td>Stock accuracy</td>
+              <td>Post stock-in, verify inventory, resolve alerts</td>
+              <td><code>/inventory/stock-ins</code>, <code>/inventory/branch-inventory</code>, <code>/inventory/alerts</code></td>
+            </tr>
+            <tr>
+              <td>Accounting Staff</td>
+              <td>Cash and finance integrity</td>
+              <td>Review expenses, postings, transfers, reports</td>
+              <td><code>/cash-flow</code>, <code>/expenses</code>, <code>/cash-flow/reports</code></td>
+            </tr>
+            <tr>
+              <td>HR Staff</td>
+              <td>Attendance to payroll</td>
+              <td>Validate attendance, process requests, run payroll</td>
+              <td><code>/hr/attendance</code>, <code>/hr/payroll/runs</code>, <code>/hr/payslips</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="rules">5. Core Operating Rules</h2>
+        <ul>
+          <li>Always verify branch context before posting transactions.</li>
+          <li>Never share accounts or passwords.</li>
+          <li>Do not bypass approvals for controlled transactions.</li>
+          <li>Resolve all daily variances before shift end, or log escalation notes.</li>
+          <li>Use role-appropriate modules only; escalate cross-role actions.</li>
+        </ul>
+        <div class="danger"><strong>Do not proceed</strong> when figures do not reconcile. Stop posting and escalate immediately to branch manager or accounting reviewer.</div>
+
+        <h2 id="navigation">6. Navigation and Route Shortcuts</h2>
+        <div class="grid-two">
+          <div class="panel">
+            <h3>Core Work Routes</h3>
+            <ul>
+              <li>POS: <code>/pos</code></li>
+              <li>Sales list: <code>/sales</code></li>
+              <li>Inventory dashboard: <code>/inventory/dashboard</code></li>
+              <li>Airtime transactions: <code>/airtime/transactions</code></li>
+              <li>Cash flow dashboard: <code>/cash-flow</code></li>
+              <li>HR dashboard: <code>/hr/dashboard</code></li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Control and Review Routes</h3>
+            <ul>
+              <li>Approvals: <code>/approvals</code></li>
+              <li>Reports hub: <code>/reports</code></li>
+              <li>Warranty reports: <code>/warranty/reports</code></li>
+              <li>Finance reports: <code>/cash-flow/reports</code></li>
+              <li>Security logs: <code>/activity-logs</code></li>
+              <li>Branch switch: <code>/branch/switch</code></li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 id="playbooks">7. Module Playbooks (Beginner-Friendly)</h2>
+        <h3>7.1 POS and Sales Playbook</h3>
+        <ol>
+          <li>Open <code>/pos</code>.</li>
+          <li>Add items and verify quantity before payment.</li>
+          <li>Complete payment and print receipt.</li>
+          <li>If customer pauses transaction, move to hold list.</li>
+          <li>If correction is required after posting, file return or void request.</li>
+        </ol>
+        <div class="note"><strong>Quality check:</strong> Every completed sale must have a receipt and visible record in <code>/sales</code>.</div>
+
+        <h3>7.2 Inventory Playbook</h3>
+        <ol>
+          <li>Receive stock via <code>/inventory/stock-ins</code>.</li>
+          <li>Validate quantities and IMEI when required.</li>
+          <li>Approve stock-in based on role permission.</li>
+          <li>Check branch inventory and movement logs.</li>
+          <li>Resolve alerts for low stock or inconsistencies.</li>
+        </ol>
+
+        <h3>7.3 Airtime Playbook</h3>
+        <ol>
+          <li>Open <code>/airtime/transactions</code>.</li>
+          <li>Select provider and wallet; verify wallet balance.</li>
+          <li>Post load transaction and verify success.</li>
+          <li>When balance is low, request funding.</li>
+          <li>For mistakes, request adjustment or transaction reversal with reason.</li>
+        </ol>
+
+        <h3>7.4 Cash Flow and Expense Playbook</h3>
+        <ol>
+          <li>Create opening cash entry at start of day.</li>
+          <li>Post cash-in and cash-out with correct category and reference.</li>
+          <li>Submit and review expenses through approval route.</li>
+          <li>Run daily closing and resolve any variance.</li>
+          <li>Export end-of-day report for management validation.</li>
+        </ol>
+
+        <h3>7.5 HR Playbook</h3>
+        <ol>
+          <li>Validate attendance completeness before payroll period close.</li>
+          <li>Review leaves and overtime with proper reviewer flow.</li>
+          <li>Generate payroll run and perform pre-release audit.</li>
+          <li>Submit for approval and release only when finalized.</li>
+          <li>Generate payslips and verify employee visibility.</li>
+        </ol>
+
+        <h2 id="scenarios">8. End-to-End Scenarios (Expanded)</h2>
+        <h3>Scenario A: New Cashier, First Live Shift</h3>
+        <ol>
+          <li>Login and verify assigned branch.</li>
+          <li>Run one supervised test sale.</li>
+          <li>Process actual customer transactions.</li>
+          <li>Handle one held transaction and one reprint.</li>
+          <li>Submit shift handover with sales total confirmation.</li>
+        </ol>
+
+        <h3>Scenario B: Branch Opening to Closing (Full Day)</h3>
+        <ol>
+          <li>Open cash, confirm approvals queue, review alerts.</li>
+          <li>Run operational transactions during day.</li>
+          <li>Review expenses and pending approvals before cutoff.</li>
+          <li>Perform daily closing and variance reconciliation.</li>
+          <li>Export day-end reports and submit to management.</li>
+        </ol>
+
+        <h3>Scenario C: Low Inventory Emergency</h3>
+        <ol>
+          <li>Alert appears in <code>/inventory/alerts</code>.</li>
+          <li>Verify movement and actual count.</li>
+          <li>Create stock-in or transfer request.</li>
+          <li>Approve and receive transfer.</li>
+          <li>Confirm stock availability in POS.</li>
+        </ol>
+
+        <h3>Scenario D: Airtime Service Dispute</h3>
+        <ol>
+          <li>Locate transaction in <code>/airtime/transactions</code>.</li>
+          <li>Validate payment, status, and wallet ledger entries.</li>
+          <li>If needed, request reversal with complete remarks.</li>
+          <li>Document customer resolution and update reviewer.</li>
+        </ol>
+
+        <h3>Scenario E: Payroll Week</h3>
+        <ol>
+          <li>Lock attendance corrections by cutoff schedule.</li>
+          <li>Review overtime, leave, loans, and cash advances.</li>
+          <li>Generate payroll run and inspect anomalies.</li>
+          <li>Process approvals and release payroll.</li>
+          <li>Generate payslip files and verify access.</li>
+        </ol>
+
+        <h3>Scenario F: Monthly Executive Review Pack</h3>
+        <ol>
+          <li>Export sales, inventory, airtime, finance, and HR reports.</li>
+          <li>Compare branch trends and unresolved risks.</li>
+          <li>Review approvals backlog and security alerts.</li>
+          <li>Present action plan for next month.</li>
+        </ol>
+
+        <h2 id="checklists">9. Daily, Weekly, Monthly Checklists</h2>
+        <h3>Daily Checklist</h3>
+        <ul>
+          <li>Cash opening completed</li>
+          <li>Approvals queue reviewed</li>
+          <li>Critical alerts checked</li>
+          <li>Daily closing and variance done</li>
+          <li>Summary report exported</li>
+        </ul>
+
+        <h3>Weekly Checklist</h3>
+        <ul>
+          <li>Inventory transfers and replenishment review</li>
+          <li>Expense trend and variance analysis</li>
+          <li>Attendance/overtime exceptions cleanup</li>
+          <li>Airtime wallet health review</li>
+        </ul>
+
+        <h3>Monthly Checklist</h3>
+        <ul>
+          <li>Consolidated report pack exported</li>
+          <li>Permission and role review</li>
+          <li>Session and security log review</li>
+          <li>Branch performance action planning</li>
+        </ul>
+
+        <h2 id="mistakes">10. Common Mistakes to Avoid</h2>
+        <ul>
+          <li>Posting transactions in the wrong branch context.</li>
+          <li>Approving requests without checking source data.</li>
+          <li>Ignoring low-stock and low-wallet alerts until outage.</li>
+          <li>Running payroll with incomplete attendance records.</li>
+          <li>Leaving unresolved variance without notes and escalation.</li>
+        </ul>
+
+        <h2 id="troubleshooting">11. Troubleshooting and Escalation</h2>
+        <h3>Problem 1: Access Denied</h3>
+        <ol>
+          <li>Re-login and check role.</li>
+          <li>Confirm branch assignment.</li>
+          <li>Confirm account is active.</li>
+          <li>If still blocked, escalate to admin with screenshot and route URL.</li>
+        </ol>
+
+        <h3>Problem 2: Record Not Found</h3>
+        <ol>
+          <li>Clear date/branch/status filters.</li>
+          <li>Check route/module and search input.</li>
+          <li>Verify user permissions.</li>
+        </ol>
+
+        <h3>Problem 3: Approval Button Missing</h3>
+        <ol>
+          <li>Check request status is pending.</li>
+          <li>Check your role includes approval permission.</li>
+          <li>Check branch scope alignment.</li>
+        </ol>
+
+        <h3>Escalation Matrix</h3>
+        <table class="table-guide">
+          <thead>
+            <tr>
+              <th>Issue Type</th>
+              <th>First Escalation</th>
+              <th>Second Escalation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>POS transaction issue</td>
+              <td>Branch Manager</td>
+              <td>Admin or IT Support</td>
+            </tr>
+            <tr>
+              <td>Inventory mismatch</td>
+              <td>Inventory Lead</td>
+              <td>Branch Manager</td>
+            </tr>
+            <tr>
+              <td>Airtime dispute</td>
+              <td>Airtime Supervisor</td>
+              <td>Accounting Reviewer</td>
+            </tr>
+            <tr>
+              <td>Payroll discrepancy</td>
+              <td>HR Officer</td>
+              <td>Accounting + Admin</td>
+            </tr>
+            <tr>
+              <td>System access/security incident</td>
+              <td>Admin</td>
+              <td>Owner/Super Admin</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="glossary">12. Glossary</h2>
+        <ul>
+          <li><strong>Branch Context:</strong> The currently selected branch scope for viewing/posting records.</li>
+          <li><strong>Approval Queue:</strong> Pending requests requiring reviewer action.</li>
+          <li><strong>Variance:</strong> Difference between expected and actual cash/inventory figures.</li>
+          <li><strong>Held Transaction:</strong> Temporary saved POS cart awaiting completion.</li>
+          <li><strong>Payroll Run:</strong> Computed payroll batch awaiting approvals/release.</li>
+        </ul>
+
+        <h2 id="references">13. References</h2>
+        <ul>
+          <li><code>docs/default_user_credentials.md</code></li>
+          <li><code>docs/employee_self_service_test_accounts.md</code></li>
+          <li><code>docs/full_demo_operations_seeder.md</code></li>
+          <li><code>docs/system_quick_start_branch_operations.md</code></li>
+        </ul>
+
+        <div class="footer">
+          RMS User Manual (Professional Edition) | Developed by Daveonwork IT Solutions
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -49,6 +49,7 @@
 
                         <button type="submit" class="btn btn-warning btn-block font-weight-bold">Sign In</button>
                         <a href="{{ route('login') }}?mode=normal" class="btn btn-outline-secondary btn-block mt-2">Switch to Normal Login</a>
+                        <a href="{{ asset('manuals/rms-user-manual.html') }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-block mt-2">Open RMS User Manual</a>
                     </form>
                 </div>
 
