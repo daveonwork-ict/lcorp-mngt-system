@@ -21,10 +21,20 @@ class POSService
             abort(401);
         }
 
-        $activeBranchId = $branchId ?? session('active_branch_id') ?? $user->primary_branch_id;
+        $sessionBranchId = session('active_branch_id');
+        $fallbackBranchId = $sessionBranchId
+            ?: $user->primary_branch_id
+            ?: $this->branchAccessService->accessibleBranches($user)->pluck('id')->first();
+
+        $activeBranchId = $branchId ?? $sessionBranchId ?? $user->primary_branch_id;
 
         if (! $this->branchAccessService->canAccessBranch($user, $activeBranchId)) {
-            abort(403, 'Branch access denied.');
+            if ($fallbackBranchId && $this->branchAccessService->canAccessBranch($user, (int) $fallbackBranchId)) {
+                $activeBranchId = (int) $fallbackBranchId;
+                session(['active_branch_id' => $activeBranchId]);
+            } else {
+                abort(403, 'Branch access denied.');
+            }
         }
 
         return [
