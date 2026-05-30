@@ -2,6 +2,12 @@
 
 return [
     'owner_role_code' => env('RMS_OWNER_ROLE_CODE', 'owner'),
+    'admin_role_code' => env('RMS_ADMIN_ROLE_CODE', 'super_admin'),
+    'global_branch_role_codes' => array_values(array_unique(array_filter([
+        env('RMS_OWNER_ROLE_CODE', 'owner'),
+        env('RMS_ADMIN_ROLE_CODE', 'super_admin'),
+        'admin',
+    ]))),
 
     'default_roles' => [
         ['code' => 'owner', 'name' => 'Owner', 'description' => 'Executive access across all modules'],

@@ -33,7 +33,7 @@ class ReportFilterService
 
     public function enforceBranchScope(User $user, ?int $branchId = null): ?int
     {
-        if ($user->role?->code === config('rms.owner_role_code')) {
+        if ($this->branchAccessService->hasGlobalBranchAccess($user)) {
             return $branchId;
         }
 
@@ -56,7 +56,7 @@ class ReportFilterService
             return $query->where($column, $resolvedBranchId);
         }
 
-        if ($user->role?->code !== config('rms.owner_role_code')) {
+        if (! $this->branchAccessService->hasGlobalBranchAccess($user)) {
             $allowed = $this->branchAccessService->accessibleBranches($user)->pluck('id')->all();
             return $query->whereIn($column, $allowed ?: [-1]);
         }

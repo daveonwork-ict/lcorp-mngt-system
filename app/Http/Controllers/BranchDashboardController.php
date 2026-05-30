@@ -13,6 +13,7 @@ use App\Models\OvertimeRequest;
 use App\Models\Payslip;
 use App\Services\AnnouncementTargetService;
 use App\Services\AuditLogService;
+use App\Services\BranchAccessService;
 use App\Services\DashboardAnalyticsService;
 use App\Services\NotificationService;
 use App\Services\ReportFilterService;
@@ -25,6 +26,7 @@ class BranchDashboardController extends Controller
     public function __construct(
         private readonly DashboardAnalyticsService $dashboardService,
         private readonly ReportFilterService $filterService,
+        private readonly BranchAccessService $branchAccessService,
         private readonly AuditLogService $auditLogService,
         private readonly AnnouncementTargetService $announcementTargetService,
         private readonly NotificationService $notificationService,
@@ -55,9 +57,7 @@ class BranchDashboardController extends Controller
             'summary' => $this->dashboardService->branch($user, $branchId, $filters),
             'employeePanel' => $this->buildEmployeePanel($user->id),
             'filters' => $filters,
-            'branches' => $user->role?->code === config('rms.owner_role_code')
-                ? Branch::query()->where('is_active', true)->orderBy('branch_name')->get()
-                : $user->branches()->orderBy('branch_name')->get(),
+            'branches' => $this->branchAccessService->accessibleBranches($user)->sortBy('branch_name')->values(),
         ]);
     }
 
