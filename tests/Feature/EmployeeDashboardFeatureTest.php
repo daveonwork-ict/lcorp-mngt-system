@@ -21,6 +21,7 @@ use App\Models\Payslip;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ChatMessageService;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
@@ -189,27 +190,18 @@ class EmployeeDashboardFeatureTest extends TestCase
             'status' => 'active',
         ]);
 
-        $message = ChatMessage::query()->create([
-            'chat_room_id' => $room->id,
-            'sender_id' => $teammate->id,
-            'branch_id' => $branch->id,
+        $this->actingAs($teammate);
+
+        $message = app(ChatMessageService::class)->send($room, $teammate, [
             'message_body' => 'Please confirm your shift handoff before lunch.',
             'message_type' => 'text',
-            'status' => 'sent',
         ]);
 
-        $notification = CommunicationNotification::query()->create([
-            'user_id' => $user->id,
-            'branch_id' => $branch->id,
-            'chat_room_id' => $room->id,
-            'chat_message_id' => $message->id,
-            'category' => 'group_message',
-            'title' => 'New chat message',
-            'message' => 'Dashboard Teammate sent you a chat update.',
-            'payload' => ['route' => route('chat.rooms.show', $room)],
-            'is_read' => false,
-            'created_by' => $teammate->id,
-        ]);
+        $notification = CommunicationNotification::query()
+            ->where('user_id', $user->id)
+            ->where('chat_room_id', $room->id)
+            ->latest('id')
+            ->firstOrFail();
 
         $this->actingAs($user)
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
@@ -232,8 +224,9 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Please confirm your shift handoff before lunch.')
             ->assertSee('Recent Notifications')
             ->assertSee('New chat message')
-            ->assertSee('Dashboard Teammate sent you a chat update.')
+            ->assertSee('Dashboard Teammate: Please confirm your shift handoff before lunch.')
             ->assertSee('Open Notification Center')
+            ->assertSee('/chat/rooms/'.$room->id, false)
             ->assertSee('Mark Room Read')
             ->assertSee('Mark Read')
             ->assertSee('Acknowledge');

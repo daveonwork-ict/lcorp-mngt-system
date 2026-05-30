@@ -9,6 +9,8 @@ These accounts are intended for smoke testing the HR self-service flow:
 - leave requests
 - overtime requests
 - payslip viewing
+- employee dashboard chat activity
+- employee dashboard communication notifications
 
 ## Shared Password
 
@@ -32,6 +34,8 @@ All employee self-service test accounts currently use:
 - Each account is linked to its branch through `primary_branch_id` and `user_branches`.
 - Each account has an `employee_profiles` record.
 - Payslip files are stored under `storage/app/hr/payslips/`.
+- Live dashboard communication data can be recreated with `php artisan db:seed --class=EmployeeDashboardCommunicationSeeder --no-interaction`.
+- The communication seed creates one private support room, one starter message, and one unread communication notification per employee account.
 - The local app server was validated at `http://127.0.0.1:8000` during setup.
 
 ## Quick Validation Targets

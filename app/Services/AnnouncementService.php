@@ -184,7 +184,7 @@ class AnnouncementService
             $announcement->title,
             [
                 'announcement_id' => $announcement->id,
-                'route' => route('announcements.show', $announcement),
+                'route' => route('announcements.show', $announcement, false),
             ],
             $announcement->id,
             null,
@@ -198,7 +198,10 @@ class AnnouncementService
                 'urgent_announcement',
                 'Urgent notice',
                 $announcement->title,
-                ['announcement_id' => $announcement->id],
+                [
+                    'announcement_id' => $announcement->id,
+                    'route' => route('announcements.show', $announcement, false),
+                ],
                 $announcement->id,
                 null,
                 null

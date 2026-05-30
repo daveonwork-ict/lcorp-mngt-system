@@ -106,7 +106,7 @@ class ChatMessageService
                 [
                     'chat_room_id' => $room->id,
                     'chat_message_id' => $message->id,
-                    'route' => route('chat.rooms.show', $room),
+                    'route' => route('chat.rooms.show', $room, false),
                 ],
                 null,
                 $room->id,
@@ -134,6 +134,7 @@ class ChatMessageService
                     [
                         'chat_room_id' => $room->id,
                         'chat_message_id' => $message->id,
+                        'route' => route('chat.rooms.show', $room, false),
                     ],
                     null,
                     $room->id,
