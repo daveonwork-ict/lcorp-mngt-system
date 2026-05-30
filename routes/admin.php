@@ -15,9 +15,9 @@ use App\Http\Controllers\GoLiveChecklistController;
 use App\Http\Controllers\LoginSecurityController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\PrototypeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\SecurityAlertController;
 use App\Http\Controllers\SecurityDashboardController;
 use App\Http\Controllers\SessionSecurityController;
@@ -138,9 +138,10 @@ Route::get('/branches-overview', [BranchController::class, 'index'])
     ->middleware('permission:view_branches')
     ->name('branches.index');
 
-Route::get('/settings', fn () => app(PrototypeController::class)->module('settings'))
-    ->middleware('permission:settings.view')
-    ->name('settings.index');
+Route::middleware('permission:settings.view')->group(function (): void {
+    Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings/branding', [SystemSettingController::class, 'updateBranding'])->name('settings.branding.update');
+});
 
 Route::middleware('permission:view_deployment_checklists')->group(function (): void {
     Route::get('/deployment/checklists', [DeploymentChecklistController::class, 'index'])->name('deployment.checklists.index');

@@ -5,6 +5,10 @@
     <div class="card card-outline card-warning shadow-lg auth-card">
         <div class="card-body login-card-body">
             <div class="text-center mb-4">
+                <div class="mb-2">
+                    <img src="{{ $brandingLoginLogoUrl ?? asset('images/dits_logo.png') }}" alt="Daveonwork IT Solutions" style="max-width: 260px; width: 100%; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                    <span style="display:none; font-weight:700; color:#1f2f46; font-size:0.92rem;">Daveonwork IT Solutions</span>
+                </div>
                 <span class="brand-ribbon">Retail Operations Suite</span>
                 <h3 class="mt-3 mb-1">Retail Management System (RMS)</h3>
                 <p class="text-muted mb-0">Secure access for branch operations, finance, HR, and analytics.</p>

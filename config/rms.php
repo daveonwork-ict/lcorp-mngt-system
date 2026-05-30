@@ -224,6 +224,9 @@ return [
 
     'default_settings' => [
         ['key' => 'system.company_name', 'value' => 'RC Store RMS', 'group' => 'branding'],
+        ['key' => 'branding.login_logo_path', 'value' => 'images/dits_logo.png', 'group' => 'branding'],
+        ['key' => 'branding.sidenav_logo_path', 'value' => 'images/dits_logo.png', 'group' => 'branding'],
+        ['key' => 'branding.favicon_path', 'value' => 'icons/icon-192x192.svg', 'group' => 'branding'],
         ['key' => 'system.currency', 'value' => 'PHP', 'group' => 'regional'],
         ['key' => 'security.session_timeout_minutes', 'value' => '120', 'group' => 'security'],
     ],

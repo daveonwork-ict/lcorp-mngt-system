@@ -126,9 +126,9 @@
     ];
 @endphp
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{{ $dashboardRoute ? route($dashboardRoute) : route('login') }}" class="brand-link">
-        <i class="fas fa-store-alt ml-3 mr-2"></i>
-        <span class="brand-text font-weight-light">RMS</span>
+    <a href="{{ $dashboardRoute ? route($dashboardRoute) : route('login') }}" class="brand-link" style="display:flex; align-items:center; justify-content:center; padding:0.65rem 0.8rem;">
+        <img src="{{ $brandingSidenavLogoUrl ?? asset('images/dits_logo.png') }}" alt="Daveonwork IT Solutions" style="max-width: 220px; max-height: 64px; width: 100%; height: auto; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+        <i class="fas fa-store-alt" style="display:none;"></i>
     </a>
 
     <div class="sidebar d-flex flex-column">

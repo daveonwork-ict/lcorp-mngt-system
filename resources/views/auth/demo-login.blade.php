@@ -6,6 +6,10 @@
         <div class="card-body login-card-body">
             <div class="row">
                 <div class="col-lg-5 mb-3 mb-lg-0">
+                    <div class="mb-2">
+                        <img src="{{ $brandingLoginLogoUrl ?? asset('images/dits_logo.png') }}" alt="Daveonwork IT Solutions" style="max-width: 300px; width: 100%; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                        <span style="display:none; font-weight:700; color:#1f2f46; font-size:0.92rem;">Daveonwork IT Solutions</span>
+                    </div>
                     <span class="brand-ribbon">Demo Access</span>
                     <h3 class="mt-3 mb-1">Retail Management System (RMS)</h3>
                     <p class="text-muted mb-3">Demo Login Page with quick-fill default users.</p>

@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ $brandingFaviconUrl ?? asset('icons/icon-192x192.svg') }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <title>{{ config('app.name', 'Retail Management System (RMS)') }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
