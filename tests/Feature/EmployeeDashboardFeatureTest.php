@@ -243,6 +243,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('10:00 - 19:00')
             ->assertSee('Late by 15m')
             ->assertSee('Attendance Complete')
+            ->assertSee('Last Attendance Sync')
             ->assertSee('Badge Guide')
             ->assertSee('On Time')
             ->assertSee('Pending')

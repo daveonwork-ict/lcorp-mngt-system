@@ -76,6 +76,14 @@
                                             <span class="text-muted">No upcoming shift</span>
                                         @endif
                                     </dd>
+                                    <dt class="col-sm-4">Last Attendance Sync</dt>
+                                    <dd class="col-sm-8">
+                                        @if($employeePanel['profile']['last_sync_at'])
+                                            {{ $employeePanel['profile']['last_sync_at'] }}
+                                        @else
+                                            <span class="text-muted">Not synced yet</span>
+                                        @endif
+                                    </dd>
                                     <dt class="col-sm-4">Badge Guide</dt>
                                     <dd class="col-sm-8">
                                         <div class="d-flex flex-wrap align-items-center">

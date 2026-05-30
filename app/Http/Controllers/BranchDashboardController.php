@@ -215,6 +215,7 @@ class BranchDashboardController extends Controller
                 'next_schedule' => $this->formatScheduleSummary($nextSchedule),
                 'today_shift_status' => $this->buildTodayShiftStatus($todaySchedule, $todayAttendance),
                 'today_attendance_status' => $this->buildTodayAttendanceStatus($todayAttendance),
+                'last_sync_at' => $this->resolveLastSyncTimestamp($latestAttendance, $todaySchedule, $nextSchedule),
                 'quick_links' => $quickLinks,
             ],
             'latest_attendance' => $latestAttendance,
@@ -297,5 +298,23 @@ class BranchDashboardController extends Controller
         }
 
         return ['label' => 'Attendance Complete', 'tone' => 'primary'];
+    }
+
+    private function resolveLastSyncTimestamp(?AttendanceLog $latestAttendance, ?EmployeeSchedule $todaySchedule, ?EmployeeSchedule $nextSchedule): ?string
+    {
+        $timestamps = array_filter([
+            $latestAttendance?->updated_at,
+            $todaySchedule?->updated_at,
+            $nextSchedule?->updated_at,
+        ]);
+
+        if ($timestamps === []) {
+            return null;
+        }
+
+        return collect($timestamps)
+            ->sortDesc()
+            ->first()
+            ?->format('Y-m-d H:i');
     }
 }
