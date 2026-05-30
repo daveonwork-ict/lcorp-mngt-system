@@ -301,17 +301,6 @@ if ('serviceWorker' in navigator) {
         button.disabled = true;
     };
 
-    document.addEventListener('click', function (event) {
-        const button = toButtonElement(event.target);
-        if (!button) {
-            return;
-        }
-
-        if (button.type && button.type.toLowerCase() === 'submit') {
-            setProcessingState(button);
-        }
-    }, true);
-
     document.addEventListener('submit', function (event) {
         const form = event.target;
         if (!form || !form.querySelectorAll) {

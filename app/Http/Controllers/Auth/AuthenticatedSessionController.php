@@ -84,6 +84,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         $fallbackRoutes = [
+            'view_attendance' => 'hr.attendance.index',
             'view_inventory' => 'inventory.index',
             'view_pos' => 'pos.index',
             'view_airtime_dashboard' => 'airtime.index',

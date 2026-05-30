@@ -4,9 +4,42 @@ use App\Http\Controllers\DevicePreferenceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PWAController;
 use App\Http\Controllers\PushSubscriptionController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/dashboard/owner');
+Route::get('/', function (Request $request) {
+    $user = $request->user();
+
+    if (! $user) {
+        return redirect()->route('login');
+    }
+
+    if ($user->hasPermission('view_executive_dashboard') || $user->role?->code === config('rms.owner_role_code')) {
+        return redirect()->route('dashboard.owner');
+    }
+
+    if ($user->hasPermission('view_branch_dashboard')) {
+        return redirect()->route('dashboard.branch');
+    }
+
+    $fallbackRoutes = [
+        'view_attendance' => 'hr.attendance.index',
+        'view_inventory' => 'inventory.index',
+        'view_pos' => 'pos.index',
+        'view_airtime_dashboard' => 'airtime.index',
+        'view_cash_flow' => 'cash-flow.index',
+        'view_reports' => 'reports.index',
+        'view_approval_inbox' => 'approvals.index',
+    ];
+
+    foreach ($fallbackRoutes as $permission => $routeName) {
+        if ($user->hasPermission($permission)) {
+            return redirect()->route($routeName);
+        }
+    }
+
+    return redirect()->route('login');
+});
 
 Route::get('/offline', [PWAController::class, 'offline'])->name('pwa.offline');
 Route::get('/pwa/status', [PWAController::class, 'status'])->name('pwa.status');
