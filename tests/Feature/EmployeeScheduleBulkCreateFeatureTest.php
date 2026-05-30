@@ -34,7 +34,7 @@ class EmployeeScheduleBulkCreateFeatureTest extends TestCase
         $role = Role::query()->where('code', 'staff_user')->firstOrFail();
 
         $permissionIds = Permission::query()
-            ->whereIn('code', ['view_schedules'])
+            ->whereIn('code', ['view_schedules', 'manage_schedules'])
             ->pluck('id')
             ->all();
 

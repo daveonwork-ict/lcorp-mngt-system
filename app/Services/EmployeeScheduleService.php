@@ -17,6 +17,7 @@ class EmployeeScheduleService
     {
         return EmployeeSchedule::query()
             ->with(['user', 'branch'])
+            ->when($filters['allowed_branch_ids'] ?? null, fn ($q, $branchIds) => $q->whereIn('branch_id', $branchIds))
             ->when($filters['branch_id'] ?? null, fn ($q, $branchId) => $q->where('branch_id', $branchId))
             ->when($filters['user_id'] ?? null, fn ($q, $userId) => $q->where('user_id', $userId))
             ->when($filters['date_from'] ?? null, fn ($q, $date) => $q->whereDate('schedule_date', '>=', $date))

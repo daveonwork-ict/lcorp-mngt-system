@@ -33,8 +33,16 @@ Route::prefix('hr')->name('hr.')->group(function (): void {
     });
 
     Route::middleware('permission:view_schedules')->group(function (): void {
-        Route::resource('/schedules', EmployeeScheduleController::class)
-            ->except(['show', 'destroy']);
+        Route::get('/schedules', [EmployeeScheduleController::class, 'index'])->name('schedules.index');
+    });
+
+    Route::middleware('permission:manage_schedules')->group(function (): void {
+        Route::get('/schedules/create', [EmployeeScheduleController::class, 'create'])->name('schedules.create');
+        Route::post('/schedules', [EmployeeScheduleController::class, 'store'])->name('schedules.store');
+        Route::get('/schedules/template', [EmployeeScheduleController::class, 'template'])->name('schedules.template');
+        Route::post('/schedules/import', [EmployeeScheduleController::class, 'import'])->name('schedules.import');
+        Route::get('/schedules/{schedule}/edit', [EmployeeScheduleController::class, 'edit'])->name('schedules.edit');
+        Route::match(['PUT', 'PATCH'], '/schedules/{schedule}', [EmployeeScheduleController::class, 'update'])->name('schedules.update');
     });
 
     Route::middleware('permission:view_leave_requests')->group(function (): void {
