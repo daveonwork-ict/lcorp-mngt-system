@@ -136,7 +136,7 @@
     <div class="sidebar d-flex flex-column">
         <nav class="mt-5 flex-grow-1">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
-                @if ($isSelfServiceRole && auth()->user()?->hasPermission('view_attendance'))
+                @if (auth()->check())
                     <li class="nav-item">
                         <a href="{{ route('hr.attendance.index') }}" class="nav-link {{ request()->routeIs('hr.attendance.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-user-check"></i>

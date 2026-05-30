@@ -52,15 +52,13 @@ Route::prefix('hr')->name('hr.')->group(function (): void {
             ->except(['show', 'destroy']);
     });
 
-    Route::middleware('permission:view_attendance')->group(function (): void {
-        Route::get('/attendance/{attendance}/selfies/{captureType}', [AttendanceLogController::class, 'previewSelfie'])
-            ->name('attendance.selfies.preview');
-        Route::post('/attendance/{attendance}/reverify', [AttendanceLogController::class, 'reverify'])
-            ->name('attendance.reverify');
-        Route::resource('/attendance', AttendanceLogController::class)
-            ->parameters(['attendance' => 'attendance'])
-            ->except(['destroy']);
-    });
+    Route::get('/attendance/{attendance}/selfies/{captureType}', [AttendanceLogController::class, 'previewSelfie'])
+        ->name('attendance.selfies.preview');
+    Route::post('/attendance/{attendance}/reverify', [AttendanceLogController::class, 'reverify'])
+        ->name('attendance.reverify');
+    Route::resource('/attendance', AttendanceLogController::class)
+        ->parameters(['attendance' => 'attendance'])
+        ->except(['destroy']);
 
     Route::middleware('permission:view_overtime_requests')->group(function (): void {
         Route::resource('/overtime', OvertimeRequestController::class)
