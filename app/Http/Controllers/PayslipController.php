@@ -49,6 +49,20 @@ class PayslipController extends Controller
         return $this->payslipService->download($payslip);
     }
 
+    public function print(Payslip $payslip): View
+    {
+        $payslip->loadMissing(['payrollItem.user', 'payrollItem.run.period', 'payrollItem.run.branch', 'payrollItem.branch']);
+
+        if ($this->isSelfServiceUser() && $payslip->payrollItem?->user_id !== auth()->id()) {
+            abort(403, 'Payslip access denied.');
+        }
+
+        return view('hr.payslips.print', [
+            'payslip' => $payslip,
+            'item' => $payslip->payrollItem,
+        ]);
+    }
+
     private function isSelfServiceUser(): bool
     {
         $user = auth()->user();

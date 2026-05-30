@@ -141,6 +141,7 @@ Route::prefix('hr')->name('hr.')->group(function (): void {
             ->middleware('permission:generate_payslips')
             ->name('payslips.generate');
         Route::get('/payslips/{payslip}/download', [PayslipController::class, 'download'])->name('payslips.download');
+        Route::get('/payslips/{payslip}/print', [PayslipController::class, 'print'])->name('payslips.print');
     });
 
     Route::middleware('permission:view_hr_reports')->group(function (): void {

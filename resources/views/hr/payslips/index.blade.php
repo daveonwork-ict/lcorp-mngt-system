@@ -33,7 +33,10 @@
                     <td>{{ $payslip->payrollItem?->user?->display_name }}</td>
                     <td>{{ $payslip->payrollItem?->run?->period?->period_code }}</td>
                     <td>{{ optional($payslip->generated_at)->format('Y-m-d H:i') }}</td>
-                    <td><a href="{{ route('hr.payslips.download', $payslip) }}" class="btn btn-xs btn-outline-primary">Download</a></td>
+                    <td class="text-nowrap">
+                        <a href="{{ route('hr.payslips.print', ['payslip' => $payslip, 'autoprint' => 1]) }}" target="_blank" rel="noopener" class="btn btn-xs btn-outline-secondary">Print</a>
+                        <a href="{{ route('hr.payslips.download', $payslip) }}" class="btn btn-xs btn-outline-primary">Download DOC</a>
+                    </td>
                 </tr>
             @empty
                 <tr><td colspan="5" class="text-center text-muted">No payslips generated.</td></tr>
