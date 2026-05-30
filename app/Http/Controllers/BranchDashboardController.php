@@ -7,6 +7,7 @@ use App\Models\AttendanceLog;
 use App\Models\Branch;
 use App\Models\ChatMessage;
 use App\Models\ChatRoomMember;
+use App\Models\EmployeeSchedule;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Payslip;
@@ -120,6 +121,22 @@ class BranchDashboardController extends Controller
             ? $this->notificationService->recentCommunicationForUser($user, 4)
             : collect();
 
+        $todaySchedule = EmployeeSchedule::query()
+            ->where('user_id', $userId)
+            ->whereDate('schedule_date', now()->toDateString())
+            ->latest('id')
+            ->first();
+
+        $nextSchedule = EmployeeSchedule::query()
+            ->where('user_id', $userId)
+            ->whereDate('schedule_date', '>', now()->toDateString())
+            ->orderBy('schedule_date')
+            ->orderBy('time_in')
+            ->orderBy('id')
+            ->first();
+
+        $canViewSchedules = $user->hasPermission('view_schedules');
+
         $announcementQuery = Announcement::query()
             ->with([
                 'creator',
@@ -167,6 +184,17 @@ class BranchDashboardController extends Controller
             $cards[] = ['label' => 'Unread Notifications', 'value' => $unreadNotifications, 'url' => route('communication.notifications.index')];
         }
 
+        $quickLinks = [
+            ['label' => 'Attendance', 'url' => route('hr.attendance.index')],
+            ['label' => 'Leaves', 'url' => route('hr.leaves.index')],
+            ['label' => 'Overtime', 'url' => route('hr.overtime.index')],
+            ['label' => 'Payslips', 'url' => route('hr.payslips.index')],
+        ];
+
+        if ($canViewSchedules) {
+            $quickLinks[] = ['label' => 'Schedules', 'url' => route('hr.schedules.index')];
+        }
+
         return [
             'cards' => $cards,
             'profile' => [
@@ -176,12 +204,9 @@ class BranchDashboardController extends Controller
                 'role' => $user->role?->name ?? $user->role?->code ?? 'Staff User',
                 'branch' => $user->primaryBranch?->branch_name ?? $user->primaryBranch?->name ?? 'N/A',
                 'status' => $user->status,
-                'quick_links' => [
-                    ['label' => 'Attendance', 'url' => route('hr.attendance.index')],
-                    ['label' => 'Leaves', 'url' => route('hr.leaves.index')],
-                    ['label' => 'Overtime', 'url' => route('hr.overtime.index')],
-                    ['label' => 'Payslips', 'url' => route('hr.payslips.index')],
-                ],
+                'today_schedule' => $this->formatScheduleSummary($todaySchedule),
+                'next_schedule' => $this->formatScheduleSummary($nextSchedule),
+                'quick_links' => $quickLinks,
             ],
             'latest_attendance' => $latestAttendance,
             'latest_payslip' => $latestPayslip,
@@ -192,6 +217,31 @@ class BranchDashboardController extends Controller
             'can_view_notifications' => $canViewNotifications,
             'recent_notifications' => $recentNotifications,
             'unread_notifications' => $unreadNotifications,
+        ];
+    }
+
+    private function formatScheduleSummary(?EmployeeSchedule $schedule): ?array
+    {
+        if (! $schedule) {
+            return null;
+        }
+
+        $timeIn = $schedule->time_in ? substr((string) $schedule->time_in, 0, 5) : null;
+        $timeOut = $schedule->time_out ? substr((string) $schedule->time_out, 0, 5) : null;
+
+        if ($schedule->is_rest_day) {
+            $window = 'Rest Day';
+        } elseif ($timeIn && $timeOut) {
+            $window = $timeIn.' - '.$timeOut;
+        } elseif ($timeIn) {
+            $window = $timeIn;
+        } else {
+            $window = 'TBD';
+        }
+
+        return [
+            'date' => optional($schedule->schedule_date)->format('Y-m-d'),
+            'window' => $window,
         ];
     }
 }

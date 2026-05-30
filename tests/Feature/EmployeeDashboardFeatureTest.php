@@ -12,6 +12,7 @@ use App\Models\ChatMessageRead;
 use App\Models\ChatRoom;
 use App\Models\ChatRoomMember;
 use App\Models\CommunicationNotification;
+use App\Models\EmployeeSchedule;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\PayrollItem;
@@ -49,7 +50,7 @@ class EmployeeDashboardFeatureTest extends TestCase
         $role = Role::query()->where('code', 'staff_user')->firstOrFail();
 
         $permissionIds = Permission::query()
-            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements', 'access_chat', 'view_notification_center'])
+            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements', 'access_chat', 'view_notification_center', 'view_schedules'])
             ->pluck('id')
             ->all();
 
@@ -79,6 +80,26 @@ class EmployeeDashboardFeatureTest extends TestCase
         ]);
 
         $teammate->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
+
+        EmployeeSchedule::query()->create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'schedule_date' => now()->toDateString(),
+            'schedule_type' => 'fixed',
+            'time_in' => '09:00',
+            'time_out' => '18:00',
+            'is_rest_day' => false,
+        ]);
+
+        EmployeeSchedule::query()->create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'schedule_date' => now()->addDay()->toDateString(),
+            'schedule_type' => 'fixed',
+            'time_in' => '10:00',
+            'time_out' => '19:00',
+            'is_rest_day' => false,
+        ]);
 
         AttendanceLog::query()->create([
             'user_id' => $user->id,
@@ -215,9 +236,14 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Role')
             ->assertSee('Branch')
             ->assertSee('Status')
+            ->assertSee('Today Shift')
+            ->assertSee('Next Shift')
+            ->assertSee('09:00 - 18:00')
+            ->assertSee('10:00 - 19:00')
             ->assertSee('Attendance')
             ->assertSee('Leaves')
             ->assertSee('Overtime')
+            ->assertSee('Schedules')
             ->assertSee('Latest Attendance')
             ->assertSee('Latest Payslip')
             ->assertSee('PS-DASH-001')

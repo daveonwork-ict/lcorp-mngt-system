@@ -52,6 +52,24 @@
                                     <dd class="col-sm-8">{{ $employeePanel['profile']['branch'] }}</dd>
                                     <dt class="col-sm-4">Status</dt>
                                     <dd class="col-sm-8 text-capitalize">{{ str_replace('_', ' ', $employeePanel['profile']['status']) }}</dd>
+                                    <dt class="col-sm-4">Today Shift</dt>
+                                    <dd class="col-sm-8">
+                                        @if($employeePanel['profile']['today_schedule'])
+                                            {{ $employeePanel['profile']['today_schedule']['window'] }}
+                                            <span class="text-muted">({{ $employeePanel['profile']['today_schedule']['date'] }})</span>
+                                        @else
+                                            <span class="text-muted">No schedule set</span>
+                                        @endif
+                                    </dd>
+                                    <dt class="col-sm-4">Next Shift</dt>
+                                    <dd class="col-sm-8">
+                                        @if($employeePanel['profile']['next_schedule'])
+                                            {{ $employeePanel['profile']['next_schedule']['window'] }}
+                                            <span class="text-muted">({{ $employeePanel['profile']['next_schedule']['date'] }})</span>
+                                        @else
+                                            <span class="text-muted">No upcoming shift</span>
+                                        @endif
+                                    </dd>
                                 </dl>
                             </div>
                             <div class="col-lg-3">
