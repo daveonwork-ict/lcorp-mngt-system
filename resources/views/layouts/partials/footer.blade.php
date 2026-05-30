@@ -1,4 +1,5 @@
 <footer class="main-footer text-sm">
-    <strong>RC Store RMS Prototype Foundation.</strong>
-    <div class="float-right d-none d-sm-inline-block">Phase 0</div>
+    <strong>{{ config('app.name') }}</strong>
+    <span class="ml-2">Developed by Daveonwork IT Solutions</span>
+    <div class="float-right d-none d-sm-inline-block">RMS Platform</div>
 </footer>

@@ -128,10 +128,13 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="{{ $dashboardRoute ? route($dashboardRoute) : route('login') }}" class="brand-link">
         <i class="fas fa-store-alt ml-3 mr-2"></i>
-        <span class="brand-text font-weight-light">RC Store RMS</span>
+        <span class="brand-text font-weight-light">RMS</span>
     </a>
 
     <div class="sidebar">
+        <div class="px-3 pt-2 pb-1 text-xs text-light" style="opacity:.85; font-size:.72rem;">
+            Retail Management System<br>Developed by Daveonwork IT Solutions
+        </div>
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
                 @if ($dashboardRoute)

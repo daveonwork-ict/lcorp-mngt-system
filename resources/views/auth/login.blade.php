@@ -2,12 +2,12 @@
 
 @section('content')
 <div class="login-box">
-    <div class="card card-outline card-warning shadow-lg">
+    <div class="card card-outline card-warning shadow-lg auth-card">
         <div class="card-body login-card-body">
-            <div class="text-center mb-3">
-                <span class="brand-ribbon">Retail Management Platform</span>
-                <h3 class="mt-3 mb-1">RC Store RMS</h3>
-                <p class="text-muted">Multi-branch operations and analytics</p>
+            <div class="text-center mb-4">
+                <span class="brand-ribbon">Retail Operations Suite</span>
+                <h3 class="mt-3 mb-1">Retail Management System (RMS)</h3>
+                <p class="text-muted mb-0">Secure access for branch operations, finance, HR, and analytics.</p>
             </div>
 
             <form action="{{ route('login.store') }}" method="post">
@@ -40,8 +40,8 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-warning btn-block">Login</button>
-                <p class="text-muted small mt-3 mb-0">Security-ready: CSRF protected, input validated, and rate-limited endpoint.</p>
+                <button type="submit" class="btn btn-warning btn-block font-weight-bold">Sign In</button>
+                <p class="text-muted small mt-3 mb-0 text-center">Developed by Daveonwork IT Solutions</p>
             </form>
         </div>
     </div>
