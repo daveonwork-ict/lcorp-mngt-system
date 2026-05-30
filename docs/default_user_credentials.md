@@ -49,3 +49,10 @@ Generated from current seed behavior and local DB state on 2026-05-30.
 
 - Passwords can be overridden by environment variables in .env.
 - If users are reseeded with different env values, update this file.
+
+## Demo Login Page
+
+- Open demo login page: `/login/demo`
+- Keep regular login page: `/login?mode=normal`
+- Force demo login page from URL: `/login?mode=demo`
+- Set default login mode in `.env`: `RMS_LOGIN_PAGE=normal` or `RMS_LOGIN_PAGE=demo`

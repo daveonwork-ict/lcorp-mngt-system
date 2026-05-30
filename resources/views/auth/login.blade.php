@@ -41,6 +41,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-warning btn-block font-weight-bold">Sign In</button>
+                <a href="{{ route('login.demo') }}" class="btn btn-outline-secondary btn-block mt-2">Open Demo Login Page</a>
                 <p class="text-muted small mt-3 mb-0 text-center">Developed by Daveonwork IT Solutions</p>
             </form>
         </div>

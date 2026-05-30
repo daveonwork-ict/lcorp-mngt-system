@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'login_page' => env('RMS_LOGIN_PAGE', 'normal'),
+    'demo_password' => env('RMS_DEMO_PASSWORD', 'Demo@123456'),
+    'employee_demo_password' => env('RMS_EMPLOYEE_DEMO_PASSWORD', 'Emp@123456'),
+
     'owner_role_code' => env('RMS_OWNER_ROLE_CODE', 'owner'),
     'admin_role_code' => env('RMS_ADMIN_ROLE_CODE', 'super_admin'),
     'global_branch_role_codes' => array_values(array_unique(array_filter([

@@ -11,6 +11,7 @@ use App\Services\SessionSecurityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -22,9 +23,30 @@ class AuthenticatedSessionController extends Controller
     ) {
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $mode = Str::lower((string) $request->query('mode', ''));
+
+        if ($mode === 'demo') {
+            return $this->createDemo();
+        }
+
+        if ($mode === 'normal') {
+            return view('auth.login');
+        }
+
+        if (config('rms.login_page') === 'demo') {
+            return $this->createDemo();
+        }
+
         return view('auth.login');
+    }
+
+    public function createDemo(): View
+    {
+        return view('auth.demo-login', [
+            'demoUsers' => $this->getDemoUsers(),
+        ]);
     }
 
     public function store(LoginRequest $request): RedirectResponse
@@ -93,5 +115,48 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function getDemoUsers()
+    {
+        $defaultPassword = (string) env('RMS_DEFAULT_ROLE_PASSWORD', 'ChangeMe123!');
+        $demoPassword = (string) config('rms.demo_password', 'Demo@123456');
+        $employeeDemoPassword = (string) config('rms.employee_demo_password', 'Emp@123456');
+
+        return User::query()
+            ->with('role')
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query->where('email', 'like', '%@rcstore.local')
+                    ->orWhere('username', 'like', 'demo_%')
+                    ->orWhere('username', 'like', 'default_%')
+                    ->orWhere('username', 'like', 'employee.%')
+                    ->orWhereIn('username', ['owner', 'superadmin', 'cashier', 'branchmanager', 'auditor', 'inventorystaff', 'accountingstaff', 'staffuser']);
+            })
+            ->orderBy('username')
+            ->get()
+            ->map(function (User $user) use ($defaultPassword, $demoPassword, $employeeDemoPassword): array {
+                $username = (string) ($user->username ?? '');
+                $email = (string) ($user->email ?? '');
+
+                $resolvedPassword = $defaultPassword;
+
+                if (Str::startsWith($username, 'demo_') || Str::contains($email, 'demo.')) {
+                    $resolvedPassword = $demoPassword;
+                }
+
+                if (Str::startsWith($username, 'employee.') || Str::startsWith($email, 'employee.')) {
+                    $resolvedPassword = $employeeDemoPassword;
+                }
+
+                return [
+                    'name' => $user->display_name,
+                    'username' => $username,
+                    'email' => $email,
+                    'role' => $user->role?->name ?? 'N/A',
+                    'password' => $resolvedPassword,
+                ];
+            })
+            ->values();
     }
 }
