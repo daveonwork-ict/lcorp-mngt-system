@@ -31,6 +31,26 @@
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
         }
         .chart-card canvas { width: 100% !important; }
+        .sidebar-edge-toggle {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1065;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-top-right-radius: 999px;
+            border-bottom-right-radius: 999px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        body.sidebar-collapse .sidebar-edge-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         @media (max-width: 767px) {
             .content-header h1 { font-size: 1.15rem; }
             .touch-btn { width: 100%; }
@@ -38,6 +58,9 @@
             .main-sidebar { width: 250px; }
             .content-wrapper { min-height: calc(100vh - 102px); }
             .small-box .inner h4 { font-size: 1.15rem; }
+            .sidebar-edge-toggle {
+                display: none !important;
+            }
         }
     </style>
     @stack('head')
@@ -75,6 +98,10 @@
 
     @include('layouts.partials.footer')
 </div>
+
+<button type="button" class="btn btn-primary sidebar-edge-toggle" data-widget="pushmenu" aria-label="Expand sidebar">
+    <i class="fas fa-chevron-right"></i>
+</button>
 
 <button id="pwaInstallBtn" class="btn btn-primary pwa-install-btn d-none" type="button" aria-label="Install app">
     <i class="fas fa-download mr-1"></i>Install App
@@ -136,6 +163,44 @@ if ('serviceWorker' in navigator) {
 })();
 
 (function () {
+    const sidebarStateKey = 'rms.sidebar.collapsed';
+
+    const persistSidebarState = function () {
+        const collapsed = document.body.classList.contains('sidebar-collapse');
+        localStorage.setItem(sidebarStateKey, collapsed ? '1' : '0');
+    };
+
+    const applyStoredSidebarState = function () {
+        if (window.innerWidth < 992) {
+            return;
+        }
+
+        const stored = localStorage.getItem(sidebarStateKey);
+        if (stored === '1') {
+            document.body.classList.add('sidebar-collapse');
+        } else if (stored === '0') {
+            document.body.classList.remove('sidebar-collapse');
+        }
+    };
+
+    applyStoredSidebarState();
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('[data-widget="pushmenu"]')) {
+            return;
+        }
+
+        setTimeout(persistSidebarState, 120);
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth < 992) {
+            return;
+        }
+
+        applyStoredSidebarState();
+    });
+
     const storageKey = 'rms.sidebar.scrollTop';
 
     const resolveSidebarScroller = function () {
