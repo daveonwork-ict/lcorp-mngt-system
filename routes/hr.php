@@ -41,6 +41,7 @@ Route::prefix('hr')->name('hr.')->group(function (): void {
         Route::post('/schedules', [EmployeeScheduleController::class, 'store'])->name('schedules.store');
         Route::get('/schedules/template', [EmployeeScheduleController::class, 'template'])->name('schedules.template');
         Route::post('/schedules/import', [EmployeeScheduleController::class, 'import'])->name('schedules.import');
+        Route::get('/schedules/import/failed/{token}', [EmployeeScheduleController::class, 'downloadFailedImport'])->name('schedules.import.failed.download');
         Route::get('/schedules/{schedule}/edit', [EmployeeScheduleController::class, 'edit'])->name('schedules.edit');
         Route::match(['PUT', 'PATCH'], '/schedules/{schedule}', [EmployeeScheduleController::class, 'update'])->name('schedules.update');
     });

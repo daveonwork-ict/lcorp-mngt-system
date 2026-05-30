@@ -6,7 +6,10 @@ use App\Models\Branch;
 use App\Models\EmployeeSchedule;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -112,12 +115,26 @@ class ScheduleSpreadsheetService
                 'updated' => 0,
                 'failed' => 1,
                 'errors' => ['Missing required columns: '.implode(', ', $missing)],
+                'failed_rows' => [[
+                    'row_number' => 1,
+                    'employee_username' => null,
+                    'schedule_date' => null,
+                    'schedule_type' => null,
+                    'time_in' => null,
+                    'time_out' => null,
+                    'break_start' => null,
+                    'break_end' => null,
+                    'is_rest_day' => null,
+                    'branch_code' => null,
+                    'error' => 'Missing required columns: '.implode(', ', $missing),
+                ]],
             ];
         }
 
         $created = 0;
         $updated = 0;
         $errors = [];
+        $failedRows = [];
 
         for ($row = 2; $row <= $highestRow; $row++) {
             $values = [];
@@ -138,26 +155,34 @@ class ScheduleSpreadsheetService
             $username = strtolower((string) ($values['employee_username'] ?? ''));
             $employee = $employeeByUsername[$username] ?? null;
             if (! $employee) {
-                $errors[] = 'Row '.$row.': employee_username is missing or not in this branch.';
+                $message = 'employee_username is missing or not in this branch.';
+                $errors[] = 'Row '.$row.': '.$message;
+                $failedRows[] = $this->formatFailedRow($row, $values, $message);
                 continue;
             }
 
             $dateText = (string) ($values['schedule_date'] ?? '');
             if ($dateText === '') {
-                $errors[] = 'Row '.$row.': schedule_date is required.';
+                $message = 'schedule_date is required.';
+                $errors[] = 'Row '.$row.': '.$message;
+                $failedRows[] = $this->formatFailedRow($row, $values, $message);
                 continue;
             }
 
             try {
                 $scheduleDate = Carbon::parse($dateText)->toDateString();
             } catch (\Throwable) {
-                $errors[] = 'Row '.$row.': schedule_date is invalid.';
+                $message = 'schedule_date is invalid.';
+                $errors[] = 'Row '.$row.': '.$message;
+                $failedRows[] = $this->formatFailedRow($row, $values, $message);
                 continue;
             }
 
             $scheduleType = strtolower((string) ($values['schedule_type'] ?? 'fixed'));
             if (! in_array($scheduleType, ['fixed', 'rotating', 'flexible'], true)) {
-                $errors[] = 'Row '.$row.': schedule_type must be fixed, rotating, or flexible.';
+                $message = 'schedule_type must be fixed, rotating, or flexible.';
+                $errors[] = 'Row '.$row.': '.$message;
+                $failedRows[] = $this->formatFailedRow($row, $values, $message);
                 continue;
             }
 
@@ -171,7 +196,9 @@ class ScheduleSpreadsheetService
                 $rowBranch = strtolower((string) ($values['branch_code'] ?? ''));
                 $expectedBranch = strtolower((string) ($branch->code ?? $branch->branch_code));
                 if ($rowBranch !== $expectedBranch) {
-                    $errors[] = 'Row '.$row.': branch_code does not match selected branch.';
+                    $message = 'branch_code does not match selected branch.';
+                    $errors[] = 'Row '.$row.': '.$message;
+                    $failedRows[] = $this->formatFailedRow($row, $values, $message);
                     continue;
                 }
             }
@@ -205,6 +232,67 @@ class ScheduleSpreadsheetService
             'updated' => $updated,
             'failed' => count($errors),
             'errors' => array_slice($errors, 0, 10),
+            'failed_rows' => $failedRows,
+        ];
+    }
+
+    public function storeFailedRowsCsv(array $failedRows, int $userId): string
+    {
+        $token = Str::lower(Str::random(40));
+        $path = 'imports/schedules/failed/'.$token.'.csv';
+
+        $handle = fopen('php://temp', 'wb+');
+        fputcsv($handle, ['row_number', 'employee_username', 'schedule_date', 'schedule_type', 'time_in', 'time_out', 'break_start', 'break_end', 'is_rest_day', 'branch_code', 'error']);
+
+        foreach ($failedRows as $failedRow) {
+            fputcsv($handle, [
+                $failedRow['row_number'] ?? '',
+                $failedRow['employee_username'] ?? '',
+                $failedRow['schedule_date'] ?? '',
+                $failedRow['schedule_type'] ?? '',
+                $failedRow['time_in'] ?? '',
+                $failedRow['time_out'] ?? '',
+                $failedRow['break_start'] ?? '',
+                $failedRow['break_end'] ?? '',
+                $failedRow['is_rest_day'] ?? '',
+                $failedRow['branch_code'] ?? '',
+                $failedRow['error'] ?? '',
+            ]);
+        }
+
+        rewind($handle);
+        $content = (string) stream_get_contents($handle);
+        fclose($handle);
+
+        Storage::put($path, $content);
+
+        Cache::put('schedule_import_failed:'.$token, [
+            'path' => $path,
+            'user_id' => $userId,
+        ], now()->addHours(4));
+
+        return $token;
+    }
+
+    public function failedRowsFile(string $token, int $userId): ?array
+    {
+        $payload = Cache::get('schedule_import_failed:'.$token);
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        if (($payload['user_id'] ?? null) !== $userId) {
+            return null;
+        }
+
+        $path = (string) ($payload['path'] ?? '');
+        if ($path === '' || ! Storage::exists($path)) {
+            return null;
+        }
+
+        return [
+            'path' => $path,
+            'name' => 'schedule-import-failed-rows-'.now()->format('YmdHis').'.csv',
         ];
     }
 
@@ -238,5 +326,22 @@ class ScheduleSpreadsheetService
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function formatFailedRow(int $rowNumber, array $values, string $message): array
+    {
+        return [
+            'row_number' => $rowNumber,
+            'employee_username' => $values['employee_username'] ?? null,
+            'schedule_date' => $values['schedule_date'] ?? null,
+            'schedule_type' => $values['schedule_type'] ?? null,
+            'time_in' => $values['time_in'] ?? null,
+            'time_out' => $values['time_out'] ?? null,
+            'break_start' => $values['break_start'] ?? null,
+            'break_end' => $values['break_end'] ?? null,
+            'is_rest_day' => $values['is_rest_day'] ?? null,
+            'branch_code' => $values['branch_code'] ?? null,
+            'error' => $message,
+        ];
     }
 }

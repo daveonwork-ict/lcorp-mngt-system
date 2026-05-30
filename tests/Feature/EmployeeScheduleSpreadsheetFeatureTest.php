@@ -132,6 +132,49 @@ class EmployeeScheduleSpreadsheetFeatureTest extends TestCase
         @unlink($tempPath);
     }
 
+    public function test_import_with_errors_exposes_failed_rows_download(): void
+    {
+        [$branch, $manager] = $this->makeBranchManagerWithSchedulePermissions();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template');
+        $sheet->fromArray([
+            ['employee_username', 'schedule_date', 'schedule_type', 'time_in', 'time_out', 'break_start', 'break_end', 'is_rest_day', 'branch_code'],
+            ['unknown.user', '2026-06-12', 'fixed', '08:00', '17:00', '12:00', '13:00', '0', (string) ($branch->code ?? $branch->branch_code)],
+        ], null, 'A1');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'schedule-import-failed-').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        $upload = new UploadedFile(
+            $tempPath,
+            'schedule-import-failed.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($manager)
+            ->post(route('hr.schedules.import'), [
+                'branch_id' => $branch->id,
+                'file' => $upload,
+            ]);
+
+        $response->assertRedirect(route('hr.schedules.index', ['branch_id' => $branch->id]));
+        $response->assertSessionHas('schedule_import_failed_download');
+
+        $downloadUrl = session('schedule_import_failed_download');
+
+        $this->actingAs($manager)
+            ->get($downloadUrl)
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        @unlink($tempPath);
+    }
+
     private function makeBranchManagerWithSchedulePermissions(): array
     {
         $branch = Branch::query()->where('code', 'MAIN')->firstOrFail();

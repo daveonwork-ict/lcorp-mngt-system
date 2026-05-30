@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
 
@@ -121,11 +122,32 @@ class EmployeeScheduleController extends Controller
         $result = $this->scheduleSpreadsheetService->importForBranch($request->file('file'), $branch, $employees);
 
         $message = 'Import complete. Created '.$result['created'].' and updated '.$result['updated'].' schedule(s).';
+        $downloadUrl = null;
+
         if (($result['failed'] ?? 0) > 0) {
             $message .= ' Failed rows: '.$result['failed'].'.';
+
+            $token = $this->scheduleSpreadsheetService->storeFailedRowsCsv($result['failed_rows'] ?? [], (int) $request->user()->id);
+            $downloadUrl = route('hr.schedules.import.failed.download', ['token' => $token]);
         }
 
-        return redirect()->route('hr.schedules.index', ['branch_id' => $branchId])->with('status', $message);
+        return redirect()
+            ->route('hr.schedules.index', ['branch_id' => $branchId])
+            ->with('status', $message)
+            ->with('schedule_import_failed_download', $downloadUrl);
+    }
+
+    public function downloadFailedImport(Request $request, string $token): StreamedResponse
+    {
+        $file = $this->scheduleSpreadsheetService->failedRowsFile($token, (int) $request->user()->id);
+
+        if (! $file) {
+            abort(404, 'Failed import file not found.');
+        }
+
+        return response()->streamDownload(function () use ($file): void {
+            echo (string) Storage::get($file['path']);
+        }, $file['name'], ['Content-Type' => 'text/csv']);
     }
 
     public function edit(Request $request, EmployeeSchedule $schedule): View

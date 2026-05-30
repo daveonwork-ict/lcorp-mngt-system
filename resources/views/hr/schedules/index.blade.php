@@ -2,6 +2,15 @@
 
 @section('page_title', 'Employee Schedules')
 @section('content')
+@if(session('schedule_import_failed_download'))
+    <div class="alert alert-warning">
+        <div class="d-flex flex-wrap align-items-center justify-content-between">
+            <div class="mr-2">Some rows failed during schedule import. Download the failed rows file to correct and re-upload.</div>
+            <a href="{{ session('schedule_import_failed_download') }}" class="btn btn-sm btn-outline-warning">Download Failed Rows</a>
+        </div>
+    </div>
+@endif
+
 <div class="card">
     <div class="card-header">
         <form method="GET" class="form-row">
