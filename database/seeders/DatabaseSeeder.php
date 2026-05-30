@@ -43,5 +43,11 @@ class DatabaseSeeder extends Seeder
                 FullDemoOperationsSeeder::class,
             ]);
         }
+
+        if ((bool) env('RMS_SEED_STAFF_TEST_SCHEDULES', false)) {
+            $this->call([
+                StaffScheduleTestingSeeder::class,
+            ]);
+        }
     }
 }
