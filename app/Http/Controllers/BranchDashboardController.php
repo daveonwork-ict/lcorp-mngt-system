@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Payslip;
+use App\Services\AnnouncementTargetService;
 use App\Services\AuditLogService;
 use App\Services\DashboardAnalyticsService;
 use App\Services\ReportFilterService;
@@ -19,6 +21,7 @@ class BranchDashboardController extends Controller
         private readonly DashboardAnalyticsService $dashboardService,
         private readonly ReportFilterService $filterService,
         private readonly AuditLogService $auditLogService,
+        private readonly AnnouncementTargetService $announcementTargetService,
     ) {
     }
 
@@ -73,15 +76,45 @@ class BranchDashboardController extends Controller
             ->latest('generated_at')
             ->first();
 
+        $announcementQuery = Announcement::query()
+            ->with('creator')
+            ->latest('is_pinned')
+            ->latest('published_at')
+            ->latest('id');
+
+        $this->announcementTargetService->scopeVisibleToUser($announcementQuery, $user);
+
+        $announcementQuery->where(function ($active): void {
+            $active->whereIn('status', ['published', 'scheduled'])
+                ->where(function ($window): void {
+                    $window->whereNull('publish_start_at')
+                        ->orWhere('publish_start_at', '<=', now());
+                })
+                ->where(function ($window): void {
+                    $window->whereNull('publish_end_at')
+                        ->orWhere('publish_end_at', '>=', now());
+                });
+        });
+
+        $unreadAnnouncements = (clone $announcementQuery)
+            ->whereDoesntHave('reads', fn ($reads) => $reads->where('user_id', $userId)->whereIn('acknowledgment_status', ['read', 'acknowledged']))
+            ->count();
+
+        $recentAnnouncements = (clone $announcementQuery)
+            ->limit(4)
+            ->get();
+
         return [
             'cards' => [
                 ['label' => 'Attendance This Month', 'value' => AttendanceLog::query()->where('user_id', $userId)->whereBetween('attendance_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])->count(), 'url' => route('hr.attendance.index')],
                 ['label' => 'Pending Leave Requests', 'value' => LeaveRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.leaves.index')],
                 ['label' => 'Pending Overtime Requests', 'value' => OvertimeRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.overtime.index')],
                 ['label' => 'Payslips Available', 'value' => Payslip::query()->whereHas('payrollItem', fn ($q) => $q->where('user_id', $userId))->count(), 'url' => route('hr.payslips.index')],
+                ['label' => 'Unread Announcements', 'value' => $unreadAnnouncements, 'url' => route('announcements.index')],
             ],
             'latest_attendance' => $latestAttendance,
             'latest_payslip' => $latestPayslip,
+            'recent_announcements' => $recentAnnouncements,
         ];
     }
 }

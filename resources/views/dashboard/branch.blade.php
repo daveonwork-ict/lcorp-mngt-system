@@ -33,7 +33,7 @@
     <div class="card-body">
         <div class="row mb-2">
             @foreach ($employeePanel['cards'] as $card)
-                <div class="col-lg-3 col-md-6 mb-3">
+                <div class="col-lg col-md-6 mb-3">
                     <a href="{{ $card['url'] }}" class="text-decoration-none text-reset">
                         <div class="small-box bg-light border h-100 mb-0">
                             <div class="inner">
@@ -97,6 +97,47 @@
                         @if($employeePanel['latest_payslip'])
                             <a href="{{ route('hr.payslips.download', $employeePanel['latest_payslip']) }}" class="btn btn-sm btn-primary">Download Latest</a>
                         @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>Latest Announcements</strong>
+                        <a href="{{ route('announcements.index') }}" class="btn btn-sm btn-outline-primary">Open Announcements</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Priority</th>
+                                        <th>Posted By</th>
+                                        <th>Published</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($employeePanel['recent_announcements'] as $announcement)
+                                        <tr class="{{ $announcement->is_urgent ? 'table-danger' : '' }}">
+                                            <td>
+                                                <a href="{{ route('announcements.show', $announcement) }}">{{ $announcement->title }}</a>
+                                                @if($announcement->is_pinned)<span class="badge badge-info ml-1">Pinned</span>@endif
+                                                @if($announcement->is_urgent)<span class="badge badge-danger ml-1">Urgent</span>@endif
+                                            </td>
+                                            <td>{{ ucfirst($announcement->priority_level) }}</td>
+                                            <td>{{ $announcement->creator?->display_name ?? 'System' }}</td>
+                                            <td>{{ optional($announcement->published_at)->format('Y-m-d H:i') ?: '-' }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="text-center text-muted">No announcements available.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
+use App\Models\AnnouncementTarget;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
 use App\Models\LeaveRequest;
@@ -123,6 +125,26 @@ class EmployeeDashboardFeatureTest extends TestCase
             'generated_at' => now(),
         ]);
 
+        $announcement = Announcement::query()->create([
+            'announcement_number' => 'ANN-DASH-001',
+            'title' => 'Payroll release reminder',
+            'content' => 'Please review your latest payslip and attendance records.',
+            'announcement_type' => 'system_notice',
+            'priority_level' => 'important',
+            'target_scope' => 'all_users',
+            'status' => 'published',
+            'created_by' => $user->id,
+            'approved_by' => $user->id,
+            'published_at' => now(),
+            'is_pinned' => true,
+        ]);
+
+        AnnouncementTarget::query()->create([
+            'announcement_id' => $announcement->id,
+            'target_type' => 'all_users',
+            'target_id' => null,
+        ]);
+
         $this->actingAs($user)
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
             ->assertOk()
@@ -133,6 +155,9 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Attendance This Month')
             ->assertSee('Pending Leave Requests')
             ->assertSee('Pending Overtime Requests')
-            ->assertSee('Payslips Available');
+            ->assertSee('Payslips Available')
+            ->assertSee('Unread Announcements')
+            ->assertSee('Latest Announcements')
+            ->assertSee('Payroll release reminder');
     }
 }
