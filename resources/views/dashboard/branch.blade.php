@@ -31,6 +31,43 @@
         <span class="text-muted small">Latest personal HR activity</span>
     </div>
     <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card shadow-sm bg-light mb-0">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-lg-4 mb-3 mb-lg-0">
+                                <div class="small text-muted text-uppercase">Employee Profile</div>
+                                <h5 class="mb-1">{{ $employeePanel['profile']['name'] }}</h5>
+                                <div class="text-muted">{{ '@'.$employeePanel['profile']['username'] }}</div>
+                                @if($employeePanel['profile']['email'])
+                                    <div class="text-muted">{{ $employeePanel['profile']['email'] }}</div>
+                                @endif
+                            </div>
+                            <div class="col-lg-5 mb-3 mb-lg-0">
+                                <dl class="row mb-0 small">
+                                    <dt class="col-sm-4">Role</dt>
+                                    <dd class="col-sm-8">{{ $employeePanel['profile']['role'] }}</dd>
+                                    <dt class="col-sm-4">Branch</dt>
+                                    <dd class="col-sm-8">{{ $employeePanel['profile']['branch'] }}</dd>
+                                    <dt class="col-sm-4">Status</dt>
+                                    <dd class="col-sm-8 text-capitalize">{{ str_replace('_', ' ', $employeePanel['profile']['status']) }}</dd>
+                                </dl>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="small text-muted text-uppercase mb-2">Quick Links</div>
+                                <div class="d-flex flex-wrap">
+                                    @foreach($employeePanel['profile']['quick_links'] as $quickLink)
+                                        <a href="{{ $quickLink['url'] }}" class="btn btn-sm btn-outline-primary mr-2 mb-2">{{ $quickLink['label'] }}</a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row mb-2">
             @foreach ($employeePanel['cards'] as $card)
                 <div class="col-lg col-md-6 mb-3">

@@ -169,6 +169,20 @@ class BranchDashboardController extends Controller
 
         return [
             'cards' => $cards,
+            'profile' => [
+                'name' => $user->display_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'role' => $user->role?->name ?? $user->role?->code ?? 'Staff User',
+                'branch' => $user->primaryBranch?->branch_name ?? $user->primaryBranch?->name ?? 'N/A',
+                'status' => $user->status,
+                'quick_links' => [
+                    ['label' => 'Attendance', 'url' => route('hr.attendance.index')],
+                    ['label' => 'Leaves', 'url' => route('hr.leaves.index')],
+                    ['label' => 'Overtime', 'url' => route('hr.overtime.index')],
+                    ['label' => 'Payslips', 'url' => route('hr.payslips.index')],
+                ],
+            ],
             'latest_attendance' => $latestAttendance,
             'latest_payslip' => $latestPayslip,
             'recent_announcements' => $recentAnnouncements,

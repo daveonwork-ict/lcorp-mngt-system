@@ -63,6 +63,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             'username' => 'dashboard.staff',
             'full_name' => 'Dashboard Staff',
             'name' => 'Dashboard Staff',
+            'email' => 'dashboard.staff@example.test',
         ]);
 
         $user->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
@@ -207,6 +208,16 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
             ->assertOk()
             ->assertSee('Employee Self-Service')
+            ->assertSee('Employee Profile')
+            ->assertSee('Dashboard Staff')
+            ->assertSee('@dashboard.staff')
+            ->assertSee('dashboard.staff@example.test')
+            ->assertSee('Role')
+            ->assertSee('Branch')
+            ->assertSee('Status')
+            ->assertSee('Attendance')
+            ->assertSee('Leaves')
+            ->assertSee('Overtime')
             ->assertSee('Latest Attendance')
             ->assertSee('Latest Payslip')
             ->assertSee('PS-DASH-001')
