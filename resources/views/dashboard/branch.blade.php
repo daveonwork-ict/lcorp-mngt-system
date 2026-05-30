@@ -24,6 +24,87 @@
     </div>
 </div>
 
+@if($employeePanel)
+<div class="card border-primary mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Employee Self-Service</strong>
+        <span class="text-muted small">Latest personal HR activity</span>
+    </div>
+    <div class="card-body">
+        <div class="row mb-2">
+            @foreach ($employeePanel['cards'] as $card)
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <a href="{{ $card['url'] }}" class="text-decoration-none text-reset">
+                        <div class="small-box bg-light border h-100 mb-0">
+                            <div class="inner">
+                                <p class="mb-1 text-muted">{{ $card['label'] }}</p>
+                                <h4>{{ $card['value'] }}</h4>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-3 mb-lg-0">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header"><strong>Latest Attendance</strong></div>
+                    <div class="card-body">
+                        @if($employeePanel['latest_attendance'])
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Date</dt>
+                                <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->attendance_date)->format('Y-m-d') }}</dd>
+                                <dt class="col-sm-4">Status</dt>
+                                <dd class="col-sm-8 text-capitalize">{{ str_replace('_', ' ', $employeePanel['latest_attendance']->attendance_status) }}</dd>
+                                <dt class="col-sm-4">Time In</dt>
+                                <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->time_in)->format('Y-m-d H:i') ?: 'N/A' }}</dd>
+                                <dt class="col-sm-4">Time Out</dt>
+                                <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->time_out)->format('Y-m-d H:i') ?: 'N/A' }}</dd>
+                                <dt class="col-sm-4">Branch</dt>
+                                <dd class="col-sm-8">{{ $employeePanel['latest_attendance']->branch?->branch_name ?? $employeePanel['latest_attendance']->branch?->name ?? 'N/A' }}</dd>
+                            </dl>
+                        @else
+                            <p class="text-muted mb-0">No attendance record available yet.</p>
+                        @endif
+                    </div>
+                    <div class="card-footer bg-white text-right">
+                        <a href="{{ route('hr.attendance.index') }}" class="btn btn-sm btn-outline-primary">Open Attendance</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header"><strong>Latest Payslip</strong></div>
+                    <div class="card-body">
+                        @if($employeePanel['latest_payslip'])
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Payslip #</dt>
+                                <dd class="col-sm-8">{{ $employeePanel['latest_payslip']->payslip_number }}</dd>
+                                <dt class="col-sm-4">Period</dt>
+                                <dd class="col-sm-8">{{ $employeePanel['latest_payslip']->payrollItem?->run?->period?->period_code ?? 'N/A' }}</dd>
+                                <dt class="col-sm-4">Generated</dt>
+                                <dd class="col-sm-8">{{ optional($employeePanel['latest_payslip']->generated_at)->format('Y-m-d H:i') ?: 'N/A' }}</dd>
+                                <dt class="col-sm-4">Net Pay</dt>
+                                <dd class="col-sm-8">{{ number_format((float) ($employeePanel['latest_payslip']->payrollItem?->net_pay ?? 0), 2) }}</dd>
+                            </dl>
+                        @else
+                            <p class="text-muted mb-0">No payslip available yet.</p>
+                        @endif
+                    </div>
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                        <a href="{{ route('hr.payslips.index') }}" class="btn btn-sm btn-outline-primary">Open Payslips</a>
+                        @if($employeePanel['latest_payslip'])
+                            <a href="{{ route('hr.payslips.download', $employeePanel['latest_payslip']) }}" class="btn btn-sm btn-primary">Download Latest</a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="row">
     @foreach ($summary['cards'] as $metric)
         <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
