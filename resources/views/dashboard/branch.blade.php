@@ -80,7 +80,7 @@
                                     <dd class="col-sm-8">
                                         @if($employeePanel['profile']['last_sync'])
                                             {{ $employeePanel['profile']['last_sync']['at'] }}
-                                            <span class="text-muted">(Source: {{ $employeePanel['profile']['last_sync']['source'] }})</span>
+                                            <span class="text-muted">(Source: {{ $employeePanel['profile']['last_sync']['source'] }}, {{ $employeePanel['profile']['last_sync']['relative'] }})</span>
                                         @else
                                             <span class="text-muted">Not synced yet</span>
                                         @endif

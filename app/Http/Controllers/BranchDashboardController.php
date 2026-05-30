@@ -331,6 +331,7 @@ class BranchDashboardController extends Controller
         return [
             'at' => $latestTimestamp->format('Y-m-d H:i'),
             'source' => $latest['source'],
+            'relative' => 'updated '.$latestTimestamp->diffForHumans(),
         ];
     }
 }
