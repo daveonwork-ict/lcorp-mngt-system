@@ -134,6 +134,18 @@
                 padding: 0.5rem 0.75rem;
             }
         }
+
+        .btn.is-processing,
+        button.is-processing,
+        input.is-processing {
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
+        .btn .btn-processing-inline {
+            display: inline-flex;
+            align-items: center;
+        }
     </style>
     @stack('styles')
     @stack('head')
@@ -248,6 +260,97 @@ if ('serviceWorker' in navigator) {
 })();
 
 (function () {
+    const PROCESSING_TEXT = 'Processing...';
+
+    const toButtonElement = function (node) {
+        if (!node) {
+            return null;
+        }
+
+        if (node.matches && node.matches('button, input[type="submit"], input[type="button"]')) {
+            return node;
+        }
+
+        return node.closest ? node.closest('button, input[type="submit"], input[type="button"]') : null;
+    };
+
+    const setProcessingState = function (button, text) {
+        if (!button || button.dataset.processingLocked === '1' || button.dataset.processingIgnore === 'true') {
+            return;
+        }
+
+        button.dataset.processingLocked = '1';
+        button.classList.add('is-processing');
+
+        if (button.tagName === 'INPUT') {
+            if (!button.dataset.originalValue) {
+                button.dataset.originalValue = button.value;
+            }
+
+            button.value = text || button.dataset.processingText || PROCESSING_TEXT;
+            button.disabled = true;
+            return;
+        }
+
+        if (!button.dataset.originalHtml) {
+            button.dataset.originalHtml = button.innerHTML;
+        }
+
+        const processingText = text || button.dataset.processingText || PROCESSING_TEXT;
+        button.innerHTML = '<span class="btn-processing-inline"><span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>' + processingText + '</span>';
+        button.disabled = true;
+    };
+
+    document.addEventListener('click', function (event) {
+        const button = toButtonElement(event.target);
+        if (!button) {
+            return;
+        }
+
+        if (button.type && button.type.toLowerCase() === 'submit') {
+            setProcessingState(button);
+        }
+    }, true);
+
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (!form || !form.querySelectorAll) {
+            return;
+        }
+
+        const submitControls = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+        submitControls.forEach(function (button) {
+            setProcessingState(button);
+        });
+    }, true);
+
+    document.addEventListener('click', function (event) {
+        const anchor = event.target.closest ? event.target.closest('a.btn') : null;
+        if (!anchor || anchor.dataset.processingIgnore === 'true') {
+            return;
+        }
+
+        const href = (anchor.getAttribute('href') || '').trim();
+        if (!href || href === '#' || href.startsWith('javascript:')) {
+            return;
+        }
+
+        if (anchor.dataset.processingLocked === '1') {
+            event.preventDefault();
+            return;
+        }
+
+        anchor.dataset.processingLocked = '1';
+        anchor.classList.add('is-processing');
+
+        if (!anchor.dataset.originalHtml) {
+            anchor.dataset.originalHtml = anchor.innerHTML;
+        }
+
+        const processingText = anchor.dataset.processingText || 'Opening...';
+        anchor.innerHTML = '<span class="btn-processing-inline"><span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>' + processingText + '</span>';
+    }, true);
+
     const sidebarStateKey = 'rms.sidebar.collapsed';
 
     const persistSidebarState = function () {

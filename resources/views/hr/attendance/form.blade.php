@@ -20,6 +20,41 @@
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $attendanceLog->branch_id ?: $currentUser?->primary_branch_id));
     $selectedSchedule = ($todaySchedule ?? null) ?: $schedules->firstWhere('id', old('schedule_id', $attendanceLog->schedule_id));
 @endphp
+
+@push('styles')
+    <style>
+        .attendance-capture-card {
+            border: 2px solid rgba(23, 162, 184, 0.35);
+        }
+
+        .attendance-capture-card .card-header {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.14), rgba(23, 162, 184, 0.04));
+        }
+
+        .attendance-capture-card .capture-actions .btn {
+            min-height: 40px;
+        }
+
+        @media (max-width: 767px) {
+            .attendance-capture-card {
+                position: sticky;
+                top: 0.65rem;
+                z-index: 15;
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+            }
+
+            .attendance-capture-card .capture-actions .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .attendance-capture-card #attendance-camera {
+                max-height: 210px !important;
+            }
+        }
+    </style>
+@endpush
+
 <form method="POST" action="{{ $mode === 'create' ? route('hr.attendance.store') : route('hr.attendance.update', $attendanceLog) }}" enctype="multipart/form-data">
     @csrf
     @if ($mode === 'edit') @method('PUT') @endif
@@ -29,6 +64,42 @@
                 <div class="alert alert-info">
                     <strong>{{ $isClockOutMode ? 'Clock-Out Detected' : 'Clock-In Detected' }}</strong>
                     <div class="mb-0 small">The system auto-detected your attendance action for today and will compute lateness/undertime/overtime automatically.</div>
+                </div>
+            @endif
+
+            @if ($needsDeviceAssist)
+                <div class="card card-outline card-info mb-3 attendance-capture-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>Device Capture</strong>
+                        <span class="badge badge-info">Capture First</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Take your selfie and verify GPS first for faster attendance submission, especially on mobile.</p>
+                        <div class="row">
+                            <div class="col-lg-6 mb-3">
+                                <video id="attendance-camera" class="w-100 border rounded" autoplay playsinline muted style="max-height: 260px; background: #000;"></video>
+                                <canvas id="attendance-canvas" class="d-none"></canvas>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-2 capture-actions">
+                                    <button type="button" id="open-camera-btn" class="btn btn-outline-primary btn-sm">Open Camera</button>
+                                    <button type="button" id="capture-in-btn" class="btn btn-primary btn-sm" {{ $isClockOutMode ? 'disabled' : '' }}>Capture Time-In</button>
+                                    <button type="button" id="capture-out-btn" class="btn btn-secondary btn-sm" {{ $isClockInMode ? 'disabled' : '' }}>Capture Time-Out</button>
+                                </div>
+                                <p id="camera-status" class="text-muted mb-2">Camera will auto-start if the browser allows it.</p>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block mb-1">Time-In Preview</small>
+                                        <img id="preview-in" alt="Time-in preview" class="img-fluid border rounded d-none" style="max-height: 130px;">
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block mb-1">Time-Out Preview</small>
+                                        <img id="preview-out" alt="Time-out preview" class="img-fluid border rounded d-none" style="max-height: 130px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             @endif
 
@@ -100,38 +171,6 @@
                 <div class="col-md-3 mb-3"><label>Device Info In *</label><input name="device_info_in" class="form-control" value="{{ old('device_info_in', data_get($attendanceLog->device_info_in, 'raw')) }}" required></div>
                 <div class="col-md-3 mb-3"><label>Device Info Out</label><input name="device_info_out" class="form-control" value="{{ old('device_info_out', data_get($attendanceLog->device_info_out, 'raw')) }}"></div>
             </div>
-
-            @if ($needsDeviceAssist)
-                <div class="card card-outline card-info mb-3">
-                    <div class="card-header"><strong>Device Capture</strong></div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-6 mb-3">
-                                <video id="attendance-camera" class="w-100 border rounded" autoplay playsinline muted style="max-height: 260px; background: #000;"></video>
-                                <canvas id="attendance-canvas" class="d-none"></canvas>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-2">
-                                    <button type="button" id="open-camera-btn" class="btn btn-outline-primary btn-sm">Open Camera</button>
-                                    <button type="button" id="capture-in-btn" class="btn btn-primary btn-sm" {{ $isClockOutMode ? 'disabled' : '' }}>Capture Time-In</button>
-                                    <button type="button" id="capture-out-btn" class="btn btn-secondary btn-sm" {{ $isClockInMode ? 'disabled' : '' }}>Capture Time-Out</button>
-                                </div>
-                                <p id="camera-status" class="text-muted mb-2">Camera will auto-start if the browser allows it.</p>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block mb-1">Time-In Preview</small>
-                                        <img id="preview-in" alt="Time-in preview" class="img-fluid border rounded d-none" style="max-height: 130px;">
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block mb-1">Time-Out Preview</small>
-                                        <img id="preview-out" alt="Time-out preview" class="img-fluid border rounded d-none" style="max-height: 130px;">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <div class="form-row">
                 <div class="col-md-3 mb-3"><label>GPS Lat In</label><input id="gps_latitude_in" type="number" step="0.0000001" name="gps_latitude_in" class="form-control" value="{{ old('gps_latitude_in', $attendanceLog->gps_latitude_in) }}" {{ $mode === 'create' ? 'readonly' : '' }}></div>
