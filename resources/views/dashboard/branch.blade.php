@@ -98,9 +98,29 @@
                                 </dl>
 
                                 @if(($employeePanel['profile']['last_sync']['freshness']['label'] ?? null) === 'Outdated')
+                                    @php
+                                        $lastSyncSource = $employeePanel['profile']['last_sync']['source'] ?? null;
+                                        $syncSourceLegend = [
+                                            ['label' => 'Attendance', 'icon' => 'fas fa-user-check'],
+                                            ['label' => 'Today Schedule', 'icon' => 'fas fa-calendar-day'],
+                                            ['label' => 'Next Schedule', 'icon' => 'fas fa-calendar-alt'],
+                                        ];
+                                    @endphp
                                     <div class="alert alert-warning mt-3 mb-0 py-2 px-3">
                                         <div class="small font-weight-semibold mb-1">Sync data looks outdated.</div>
                                         <div class="small text-muted mb-2">Please refresh attendance or schedule records to keep your shift status accurate.</div>
+                                        <div class="small mb-2">
+                                            <span class="text-muted">Stale source key:</span>
+                                            @foreach($syncSourceLegend as $sourceItem)
+                                                <span class="badge {{ $lastSyncSource === $sourceItem['label'] ? 'badge-warning' : 'badge-light' }} mr-1 mb-1">
+                                                    <i class="{{ $sourceItem['icon'] }} mr-1" aria-hidden="true"></i>{{ $sourceItem['label'] }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                        <div class="small mb-2">
+                                            <span class="text-muted">Currently stale:</span>
+                                            <strong>{{ $lastSyncSource ?? 'Unknown source' }}</strong>
+                                        </div>
                                         <div class="d-flex flex-wrap">
                                             <a href="{{ route('hr.attendance.index') }}" class="btn btn-xs btn-outline-warning mr-2 mb-1">Open Attendance</a>
                                             @if(collect($employeePanel['profile']['quick_links'])->firstWhere('label', 'Schedules'))

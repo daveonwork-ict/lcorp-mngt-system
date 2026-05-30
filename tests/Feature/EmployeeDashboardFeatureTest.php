@@ -378,6 +378,9 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Last Attendance Sync')
             ->assertSee('Outdated')
             ->assertSee('Sync data looks outdated.')
+            ->assertSee('Stale source key:')
+            ->assertSee('Currently stale:')
+            ->assertSee('Attendance')
             ->assertSee('Open Attendance')
             ->assertSee('Open Schedules');
     }
