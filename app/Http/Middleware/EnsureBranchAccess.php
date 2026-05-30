@@ -17,6 +17,7 @@ class EnsureBranchAccess
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+        $branchAccessService = app(BranchAccessService::class);
 
         if (! $user) {
             abort(401);
@@ -25,15 +26,29 @@ class EnsureBranchAccess
         $activeBranchId = $request->session()->get('active_branch_id');
 
         if (! $activeBranchId) {
-            if ($user->primary_branch_id) {
-                $request->session()->put('active_branch_id', $user->primary_branch_id);
+            $fallbackBranchId = $user->primary_branch_id
+                ?: $branchAccessService->accessibleBranches($user)->pluck('id')->first();
+
+            if ($fallbackBranchId && $branchAccessService->canAccessBranch($user, (int) $fallbackBranchId)) {
+                $request->session()->put('active_branch_id', (int) $fallbackBranchId);
             }
 
             return $next($request);
         }
 
-        if (! app(BranchAccessService::class)->canAccessBranch($user, (int) $activeBranchId)) {
-            abort(403, 'Branch access denied.');
+        if (! $branchAccessService->canAccessBranch($user, (int) $activeBranchId)) {
+            $fallbackBranchId = $user->primary_branch_id
+                ?: $branchAccessService->accessibleBranches($user)->pluck('id')->first();
+
+            if ($fallbackBranchId && $branchAccessService->canAccessBranch($user, (int) $fallbackBranchId)) {
+                $request->session()->put('active_branch_id', (int) $fallbackBranchId);
+
+                return $next($request);
+            }
+
+            $request->session()->forget('active_branch_id');
+
+            return $next($request);
         }
 
         return $next($request);

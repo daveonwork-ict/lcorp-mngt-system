@@ -169,7 +169,7 @@ return new class extends Migration
             $table->boolean('is_resolved')->default(false);
             $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('resolved_at')->nullable();
-            $table->timestamp('alerted_at');
+            $table->timestamp('alerted_at')->useCurrent();
             $table->timestamps();
 
             $table->index(['severity', 'is_resolved']);

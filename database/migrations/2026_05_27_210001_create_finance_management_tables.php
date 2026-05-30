@@ -41,7 +41,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['branch_id', 'received_at']);
-            $table->index(['source_type', 'source_reference_type', 'source_reference_id']);
+            $table->index(['source_type', 'source_reference_type', 'source_reference_id'], 'cash_ins_src_ref_idx');
         });
 
         Schema::create('cash_outs', function (Blueprint $table): void {
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['branch_id', 'released_at']);
-            $table->index(['source_type', 'source_reference_type', 'source_reference_id']);
+            $table->index(['source_type', 'source_reference_type', 'source_reference_id'], 'cash_outs_src_ref_idx');
         });
 
         Schema::create('expense_categories', function (Blueprint $table): void {

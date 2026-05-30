@@ -12,17 +12,47 @@ class BranchSeeder extends Seeder
      */
     public function run(): void
     {
-        Branch::query()->updateOrCreate(
-            ['code' => env('RMS_DEFAULT_BRANCH_CODE', 'MAIN')],
+        $branches = [
             [
-                'branch_code' => env('RMS_DEFAULT_BRANCH_CODE', 'MAIN'),
-                'branch_name' => env('RMS_DEFAULT_BRANCH_NAME', 'Main Branch'),
-                'name' => env('RMS_DEFAULT_BRANCH_NAME', 'Main Branch'),
-                'address' => env('RMS_DEFAULT_BRANCH_ADDRESS', 'TBD'),
-                'operational_status' => 'active',
-                'status' => 'active',
-                'is_active' => true,
-            ]
-        );
+                'code' => 'RCS-LPZ',
+                'name' => 'RC Station - La Paz Branch',
+                'address' => 'RCS Z Town Plaza Bldg., San Isidro (Pob.), La Paz, Tarlac',
+            ],
+            [
+                'code' => 'RCS-ZRG',
+                'name' => 'RC Station - Zaragoza Branch',
+                'address' => 'Purok Biak na Bato, Brgy. Del Pilar East, Zaragoza, Nueva Ecija',
+            ],
+            [
+                'code' => 'GB-CPS',
+                'name' => 'Gadgets & Beauty - Capas Branch',
+                'address' => 'CVO Building, Brgy. Cubcub, Capas, Tarlac',
+            ],
+            [
+                'code' => 'KRS-TARLAC',
+                'name' => 'Kriscielo - Tarlac Branch / Magic Star Mall',
+                'address' => 'Upper Ground Floor, Magic Star Mall, Cut-Cut 1, Tarlac City',
+            ],
+            [
+                'code' => 'MAIN',
+                'name' => 'Head Office - Main Warehouse',
+                'address' => 'San Isidro, La Paz Tarlac',
+            ],
+        ];
+
+        foreach ($branches as $branch) {
+            Branch::query()->updateOrCreate(
+                ['code' => $branch['code']],
+                [
+                    'branch_code' => $branch['code'],
+                    'branch_name' => $branch['name'],
+                    'name' => $branch['name'],
+                    'address' => $branch['address'],
+                    'operational_status' => 'active',
+                    'status' => 'active',
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 }

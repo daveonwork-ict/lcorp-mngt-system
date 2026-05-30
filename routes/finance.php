@@ -39,7 +39,7 @@ Route::middleware('permission:create_cash_out')->group(function (): void {
 Route::middleware('permission:view_expenses')->group(function (): void {
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::get('/expenses/attachments/{attachment}/download', [ExpenseAttachmentController::class, 'download'])->name('expenses.attachments.download');
-    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->whereNumber('expense')->name('expenses.show');
 });
 
 Route::post('/expenses', [ExpenseController::class, 'store'])
@@ -47,8 +47,8 @@ Route::post('/expenses', [ExpenseController::class, 'store'])
     ->name('expenses.store');
 
 Route::middleware('permission:approve_expense')->group(function (): void {
-    Route::post('/expenses/{expense}/approve', [ExpenseApprovalController::class, 'approve'])->name('expenses.approve');
-    Route::post('/expenses/{expense}/reject', [ExpenseApprovalController::class, 'reject'])->name('expenses.reject');
+    Route::post('/expenses/{expense}/approve', [ExpenseApprovalController::class, 'approve'])->whereNumber('expense')->name('expenses.approve');
+    Route::post('/expenses/{expense}/reject', [ExpenseApprovalController::class, 'reject'])->whereNumber('expense')->name('expenses.reject');
 });
 
 Route::middleware('permission:view_expenses')->group(function (): void {

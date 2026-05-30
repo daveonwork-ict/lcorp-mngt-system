@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BranchAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PrototypeController extends Controller
 {
+    public function __construct(private readonly BranchAccessService $branchAccessService)
+    {
+    }
+
     public function ownerDashboard(): View
     {
         return view('dashboard.owner', [
@@ -44,7 +49,14 @@ class PrototypeController extends Controller
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ]);
 
-        $request->session()->put('active_branch_id', $request->integer('branch_id'));
+        $branchId = $request->integer('branch_id');
+        $user = $request->user();
+
+        if ($user && $branchId && ! $this->branchAccessService->canAccessBranch($user, $branchId)) {
+            return back()->with('status', 'Selected branch is not accessible for your account.');
+        }
+
+        $request->session()->put('active_branch_id', $branchId);
 
         return back();
     }

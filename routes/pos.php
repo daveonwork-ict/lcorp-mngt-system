@@ -21,15 +21,17 @@ Route::post('/pos/checkout', [POSController::class, 'checkout'])
 
 Route::middleware('permission:view_sales')->group(function (): void {
     Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
-    Route::get('/sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
-    Route::get('/sales/{sale}/receipt', [ReceiptController::class, 'show'])->name('sales.receipt');
+    Route::get('/sales/{sale}', [SalesController::class, 'show'])->whereNumber('sale')->name('sales.show');
+    Route::get('/sales/{sale}/receipt', [ReceiptController::class, 'show'])->whereNumber('sale')->name('sales.receipt');
 });
 
 Route::post('/sales/{sale}/payments', [SalePaymentController::class, 'store'])
+    ->whereNumber('sale')
     ->middleware('permission:create_sale')
     ->name('sales.payments.store');
 
 Route::get('/sales/{sale}/receipt/reprint', [ReceiptController::class, 'reprint'])
+    ->whereNumber('sale')
     ->middleware('permission:reprint_receipt')
     ->name('sales.receipt.reprint');
 
@@ -48,7 +50,7 @@ Route::middleware('permission:hold_transaction')->group(function (): void {
 
 Route::middleware('permission:void_sale')->group(function (): void {
     Route::get('/sales/void-requests', [SaleVoidController::class, 'index'])->name('sales.voids.index');
-    Route::post('/sales/{sale}/void-requests', [SaleVoidController::class, 'store'])->name('sales.voids.store');
+    Route::post('/sales/{sale}/void-requests', [SaleVoidController::class, 'store'])->whereNumber('sale')->name('sales.voids.store');
 });
 
 Route::middleware('permission:approve_void_sale')->group(function (): void {

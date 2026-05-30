@@ -49,7 +49,7 @@ Route::middleware('permission:view_inventory')->group(function (): void {
     Route::delete('/inventory/brands/{brand}', [BrandController::class, 'destroy'])->name('inventory.brands.destroy');
 
     Route::get('/inventory/products', [ProductController::class, 'index'])->name('inventory.products.index');
-    Route::get('/inventory/products/{product}', [ProductController::class, 'show'])->name('inventory.products.show');
+    Route::get('/inventory/products/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('inventory.products.show');
     Route::get('/inventory/price-histories', [ProductPriceHistoryController::class, 'index'])->name('inventory.price-histories.index');
     Route::get('/inventory/imeis', [ProductImeiController::class, 'index'])->name('inventory.imeis.index');
     Route::post('/inventory/imeis', [ProductImeiController::class, 'store'])->name('inventory.imeis.store');
@@ -77,7 +77,7 @@ Route::middleware('permission:deactivate_product')->group(function (): void {
 
 Route::middleware('permission:view_stock_in')->group(function (): void {
     Route::get('/inventory/stock-ins', [StockInController::class, 'index'])->name('inventory.stock-ins.index');
-    Route::get('/inventory/stock-ins/{stockIn}', [StockInController::class, 'show'])->name('inventory.stock-ins.show');
+    Route::get('/inventory/stock-ins/{stockIn}', [StockInController::class, 'show'])->whereNumber('stockIn')->name('inventory.stock-ins.show');
 });
 
 Route::middleware('permission:create_stock_in')->group(function (): void {
@@ -91,7 +91,7 @@ Route::post('/inventory/stock-ins/{stockIn}/approve', [StockInController::class,
 
 Route::middleware('permission:view_stock_adjustment')->group(function (): void {
     Route::get('/inventory/adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory.adjustments.index');
-    Route::get('/inventory/adjustments/{adjustment}', [InventoryAdjustmentController::class, 'show'])->name('inventory.adjustments.show');
+    Route::get('/inventory/adjustments/{adjustment}', [InventoryAdjustmentController::class, 'show'])->whereNumber('adjustment')->name('inventory.adjustments.show');
 });
 
 Route::middleware('permission:create_stock_adjustment')->group(function (): void {
@@ -105,7 +105,7 @@ Route::post('/inventory/adjustments/{adjustment}/approve', [InventoryAdjustmentC
 
 Route::middleware('permission:view_inventory_transfer')->group(function (): void {
     Route::get('/inventory/transfers', [InventoryTransferController::class, 'index'])->name('inventory.transfers.index');
-    Route::get('/inventory/transfers/{transfer}', [InventoryTransferController::class, 'show'])->name('inventory.transfers.show');
+    Route::get('/inventory/transfers/{transfer}', [InventoryTransferController::class, 'show'])->whereNumber('transfer')->name('inventory.transfers.show');
 });
 
 Route::middleware('permission:create_inventory_transfer')->group(function (): void {
@@ -123,7 +123,7 @@ Route::post('/inventory/transfers/{transfer}/receive', [InventoryTransferControl
 
 Route::middleware('permission:view_physical_count')->group(function (): void {
     Route::get('/inventory/physical-counts', [PhysicalCountController::class, 'index'])->name('inventory.physical-counts.index');
-    Route::get('/inventory/physical-counts/{physicalCount}', [PhysicalCountController::class, 'show'])->name('inventory.physical-counts.show');
+    Route::get('/inventory/physical-counts/{physicalCount}', [PhysicalCountController::class, 'show'])->whereNumber('physicalCount')->name('inventory.physical-counts.show');
 });
 
 Route::middleware('permission:create_physical_count')->group(function (): void {

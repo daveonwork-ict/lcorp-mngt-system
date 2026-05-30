@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\LoginSecurityService;
 use App\Services\SessionSecurityService;
@@ -43,7 +44,39 @@ class AuthenticatedSessionController extends Controller
             $this->sessionSecurityService->registerCurrentSession();
         }
 
-        return redirect()->intended(route('dashboard.owner'));
+        return redirect()->route($this->resolveLandingRoute($user));
+    }
+
+    private function resolveLandingRoute(?User $user): string
+    {
+        if (! $user) {
+            return 'dashboard.owner';
+        }
+
+        if ($user->hasPermission('view_executive_dashboard') || $user->role?->code === config('rms.owner_role_code')) {
+            return 'dashboard.owner';
+        }
+
+        if ($user->hasPermission('view_branch_dashboard')) {
+            return 'dashboard.branch';
+        }
+
+        $fallbackRoutes = [
+            'view_inventory' => 'inventory.index',
+            'view_pos' => 'pos.index',
+            'view_airtime_dashboard' => 'airtime.index',
+            'view_cash_flow' => 'cash-flow.index',
+            'view_reports' => 'reports.index',
+            'view_approval_inbox' => 'approvals.index',
+        ];
+
+        foreach ($fallbackRoutes as $permission => $routeName) {
+            if ($user->hasPermission($permission)) {
+                return $routeName;
+            }
+        }
+
+        return 'login';
     }
 
     public function destroy(Request $request): RedirectResponse

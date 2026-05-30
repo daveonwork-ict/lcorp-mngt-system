@@ -19,12 +19,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesSeeder::class,
             PermissionsSeeder::class,
+            DefaultRolePermissionsSeeder::class,
             BranchSeeder::class,
             SystemSettingsSeeder::class,
             PaymentMethodSeeder::class,
             AirtimeProviderSeeder::class,
             ExpenseCategorySeeder::class,
             OwnerAccountSeeder::class,
+            DefaultRoleUsersSeeder::class,
         ]);
 
         $owner = User::query()->where('email', env('RMS_OWNER_EMAIL', 'owner@rcstore.local'))->first();
