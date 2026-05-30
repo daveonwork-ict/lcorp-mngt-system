@@ -327,11 +327,21 @@ class BranchDashboardController extends Controller
 
         $latest = $candidates[0];
         $latestTimestamp = $latest['timestamp'] instanceof Carbon ? $latest['timestamp'] : Carbon::parse($latest['timestamp']);
+        $ageMinutes = $latestTimestamp->diffInMinutes(now());
+
+        if ($ageMinutes <= 60) {
+            $freshness = ['label' => 'Fresh', 'tone' => 'success'];
+        } elseif ($ageMinutes <= 240) {
+            $freshness = ['label' => 'Stale', 'tone' => 'warning'];
+        } else {
+            $freshness = ['label' => 'Outdated', 'tone' => 'danger'];
+        }
 
         return [
             'at' => $latestTimestamp->format('Y-m-d H:i'),
             'source' => $latest['source'],
             'relative' => 'updated '.$latestTimestamp->diffForHumans(),
+            'freshness' => $freshness,
         ];
     }
 }

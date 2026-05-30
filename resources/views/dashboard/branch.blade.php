@@ -81,6 +81,7 @@
                                         @if($employeePanel['profile']['last_sync'])
                                             {{ $employeePanel['profile']['last_sync']['at'] }}
                                             <span class="text-muted">(Source: {{ $employeePanel['profile']['last_sync']['source'] }}, {{ $employeePanel['profile']['last_sync']['relative'] }})</span>
+                                            <span class="badge badge-{{ $employeePanel['profile']['last_sync']['freshness']['tone'] }} ml-1" title="Sync freshness health">{{ $employeePanel['profile']['last_sync']['freshness']['label'] }}</span>
                                         @else
                                             <span class="text-muted">Not synced yet</span>
                                         @endif

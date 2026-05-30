@@ -246,6 +246,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Last Attendance Sync')
             ->assertSee('Source: Attendance')
             ->assertSee('updated')
+            ->assertSee('Fresh')
             ->assertSee('Badge Guide')
             ->assertSee('On Time')
             ->assertSee('Pending')
