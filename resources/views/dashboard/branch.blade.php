@@ -57,6 +57,9 @@
                                         @if($employeePanel['profile']['today_schedule'])
                                             {{ $employeePanel['profile']['today_schedule']['window'] }}
                                             <span class="text-muted">({{ $employeePanel['profile']['today_schedule']['date'] }})</span>
+                                            @if($employeePanel['profile']['today_shift_status'])
+                                                <span class="badge badge-{{ $employeePanel['profile']['today_shift_status']['tone'] }} ml-1">{{ $employeePanel['profile']['today_shift_status']['label'] }}</span>
+                                            @endif
                                         @else
                                             <span class="text-muted">No schedule set</span>
                                         @endif

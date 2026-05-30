@@ -17,6 +17,7 @@ use App\Services\DashboardAnalyticsService;
 use App\Services\NotificationService;
 use App\Services\ReportFilterService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class BranchDashboardController extends Controller
@@ -73,6 +74,12 @@ class BranchDashboardController extends Controller
             ->where('user_id', $userId)
             ->orderByDesc('attendance_date')
             ->orderByDesc('id')
+            ->first();
+
+        $todayAttendance = AttendanceLog::query()
+            ->where('user_id', $userId)
+            ->whereDate('attendance_date', now()->toDateString())
+            ->latest('id')
             ->first();
 
         $latestPayslip = Payslip::query()
@@ -206,6 +213,7 @@ class BranchDashboardController extends Controller
                 'status' => $user->status,
                 'today_schedule' => $this->formatScheduleSummary($todaySchedule),
                 'next_schedule' => $this->formatScheduleSummary($nextSchedule),
+                'today_shift_status' => $this->buildTodayShiftStatus($todaySchedule, $todayAttendance),
                 'quick_links' => $quickLinks,
             ],
             'latest_attendance' => $latestAttendance,
@@ -243,5 +251,37 @@ class BranchDashboardController extends Controller
             'date' => optional($schedule->schedule_date)->format('Y-m-d'),
             'window' => $window,
         ];
+    }
+
+    private function buildTodayShiftStatus(?EmployeeSchedule $todaySchedule, ?AttendanceLog $todayAttendance): ?array
+    {
+        if (! $todaySchedule) {
+            return null;
+        }
+
+        if ($todaySchedule->is_rest_day) {
+            return ['label' => 'Rest Day', 'tone' => 'secondary'];
+        }
+
+        if (! $todaySchedule->time_in) {
+            return null;
+        }
+
+        if (! $todayAttendance?->time_in) {
+            return ['label' => 'No Time In Yet', 'tone' => 'warning'];
+        }
+
+        $scheduledAt = Carbon::parse($todaySchedule->schedule_date->format('Y-m-d').' '.$todaySchedule->time_in);
+        $actualTimeIn = $todayAttendance->time_in instanceof Carbon
+            ? $todayAttendance->time_in
+            : Carbon::parse($todayAttendance->time_in);
+
+        if ($actualTimeIn->greaterThan($scheduledAt)) {
+            $lateMinutes = $scheduledAt->diffInMinutes($actualTimeIn);
+
+            return ['label' => 'Late by '.$lateMinutes.'m', 'tone' => 'danger'];
+        }
+
+        return ['label' => 'On Time', 'tone' => 'success'];
     }
 }

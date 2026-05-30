@@ -26,6 +26,7 @@ use App\Services\ChatMessageService;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -104,9 +105,9 @@ class EmployeeDashboardFeatureTest extends TestCase
         AttendanceLog::query()->create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,
-            'attendance_date' => now()->toDateString(),
-            'time_in' => now()->subHour(),
-            'time_out' => now(),
+            'attendance_date' => Carbon::today()->toDateString(),
+            'time_in' => Carbon::today()->setTime(9, 15),
+            'time_out' => Carbon::today()->setTime(18, 5),
             'device_info_in' => ['raw' => 'Dashboard Browser'],
             'attendance_status' => 'present',
         ]);
@@ -240,6 +241,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Next Shift')
             ->assertSee('09:00 - 18:00')
             ->assertSee('10:00 - 19:00')
+            ->assertSee('Late by 15m')
             ->assertSee('Attendance')
             ->assertSee('Leaves')
             ->assertSee('Overtime')
