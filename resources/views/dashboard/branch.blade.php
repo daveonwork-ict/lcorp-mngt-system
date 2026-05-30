@@ -118,10 +118,12 @@
                                         <th>Priority</th>
                                         <th>Posted By</th>
                                         <th>Published</th>
+                                        <th class="text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($employeePanel['recent_announcements'] as $announcement)
+                                        @php $readStatus = $announcement->reads->first()?->acknowledgment_status ?? 'unread'; @endphp
                                         <tr class="{{ $announcement->is_urgent ? 'table-danger' : '' }}">
                                             <td>
                                                 <a href="{{ route('announcements.show', $announcement) }}">{{ $announcement->title }}</a>
@@ -131,9 +133,24 @@
                                             <td>{{ ucfirst($announcement->priority_level) }}</td>
                                             <td>{{ $announcement->creator?->display_name ?? 'System' }}</td>
                                             <td>{{ optional($announcement->published_at)->format('Y-m-d H:i') ?: '-' }}</td>
+                                            <td class="text-right text-nowrap">
+                                                @if($readStatus === 'acknowledged')
+                                                    <span class="badge badge-success">Acknowledged</span>
+                                                @elseif($readStatus === 'read')
+                                                    <span class="badge badge-info mr-1">Read</span>
+                                                    @if($announcement->requires_acknowledgment)
+                                                        <form action="{{ route('announcements.acknowledge', $announcement) }}" method="POST" class="d-inline">@csrf<button class="btn btn-xs btn-outline-success">Acknowledge</button></form>
+                                                    @endif
+                                                @else
+                                                    <form action="{{ route('announcements.read.mark', $announcement) }}" method="POST" class="d-inline">@csrf<button class="btn btn-xs btn-outline-primary">Mark Read</button></form>
+                                                    @if($announcement->requires_acknowledgment)
+                                                        <form action="{{ route('announcements.acknowledge', $announcement) }}" method="POST" class="d-inline">@csrf<button class="btn btn-xs btn-outline-success">Acknowledge</button></form>
+                                                    @endif
+                                                @endif
+                                            </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="4" class="text-center text-muted">No announcements available.</td></tr>
+                                        <tr><td colspan="5" class="text-center text-muted">No announcements available.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>

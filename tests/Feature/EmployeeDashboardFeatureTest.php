@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Announcement;
+use App\Models\AnnouncementRead;
 use App\Models\AnnouncementTarget;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
@@ -42,7 +43,7 @@ class EmployeeDashboardFeatureTest extends TestCase
         $role = Role::query()->where('code', 'staff_user')->firstOrFail();
 
         $permissionIds = Permission::query()
-            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips'])
+            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements'])
             ->pluck('id')
             ->all();
 
@@ -137,6 +138,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             'approved_by' => $user->id,
             'published_at' => now(),
             'is_pinned' => true,
+            'requires_acknowledgment' => true,
         ]);
 
         AnnouncementTarget::query()->create([
@@ -158,6 +160,26 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Payslips Available')
             ->assertSee('Unread Announcements')
             ->assertSee('Latest Announcements')
-            ->assertSee('Payroll release reminder');
+            ->assertSee('Payroll release reminder')
+            ->assertSee('Mark Read')
+            ->assertSee('Acknowledge');
+
+        $this->actingAs($user)
+            ->post(route('announcements.read.mark', $announcement), [
+                '_token' => csrf_token(),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('announcement_reads', [
+            'announcement_id' => $announcement->id,
+            'user_id' => $user->id,
+            'acknowledgment_status' => 'read',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
+            ->assertOk()
+            ->assertSee('Read')
+            ->assertSee('Acknowledge');
     }
 }

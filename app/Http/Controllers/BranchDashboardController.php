@@ -77,7 +77,10 @@ class BranchDashboardController extends Controller
             ->first();
 
         $announcementQuery = Announcement::query()
-            ->with('creator')
+            ->with([
+                'creator',
+                'reads' => fn ($reads) => $reads->where('user_id', $userId),
+            ])
             ->latest('is_pinned')
             ->latest('published_at')
             ->latest('id');

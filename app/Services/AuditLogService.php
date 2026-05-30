@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AuditLogService
 {
@@ -35,7 +36,7 @@ class AuditLogService
         ];
 
         AuditLog::query()->create(array_merge($payload, [
-            'audit_number' => 'AUD-'.now()->format('YmdHis').'-'.str_pad((string) random_int(1, 999), 3, '0', STR_PAD_LEFT),
+            'audit_number' => $this->generateAuditNumber(),
         ]));
 
         ActivityLog::query()->create([
@@ -62,5 +63,10 @@ class AuditLogService
         }
 
         return strlen($userAgent) > 190 ? substr($userAgent, 0, 190) : $userAgent;
+    }
+
+    private function generateAuditNumber(): string
+    {
+        return 'AUD-'.now()->format('YmdHisv').'-'.Str::upper(Str::random(6));
     }
 }
