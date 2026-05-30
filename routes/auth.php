@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::get('/login/demo', [AuthenticatedSessionController::class, 'createDemo'])->name('login.demo');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('login.store');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 
     Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');

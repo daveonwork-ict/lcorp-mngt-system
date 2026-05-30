@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Http\Middleware\EnsureBranchAccess;
 use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\SetSecurityHeaders;
 use App\Http\Middleware\TrackUserSession;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -16,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            SetSecurityHeaders::class,
+        ]);
+
         $middleware->alias([
             'branch.access' => EnsureBranchAccess::class,
             'permission' => EnsurePermission::class,
