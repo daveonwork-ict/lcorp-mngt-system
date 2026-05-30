@@ -60,6 +60,9 @@
                                             @if($employeePanel['profile']['today_shift_status'])
                                                 <span class="badge badge-{{ $employeePanel['profile']['today_shift_status']['tone'] }} ml-1">{{ $employeePanel['profile']['today_shift_status']['label'] }}</span>
                                             @endif
+                                            @if($employeePanel['profile']['today_attendance_status'])
+                                                <span class="badge badge-{{ $employeePanel['profile']['today_attendance_status']['tone'] }} ml-1">{{ $employeePanel['profile']['today_attendance_status']['label'] }}</span>
+                                            @endif
                                         @else
                                             <span class="text-muted">No schedule set</span>
                                         @endif

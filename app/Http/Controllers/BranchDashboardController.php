@@ -214,6 +214,7 @@ class BranchDashboardController extends Controller
                 'today_schedule' => $this->formatScheduleSummary($todaySchedule),
                 'next_schedule' => $this->formatScheduleSummary($nextSchedule),
                 'today_shift_status' => $this->buildTodayShiftStatus($todaySchedule, $todayAttendance),
+                'today_attendance_status' => $this->buildTodayAttendanceStatus($todayAttendance),
                 'quick_links' => $quickLinks,
             ],
             'latest_attendance' => $latestAttendance,
@@ -283,5 +284,18 @@ class BranchDashboardController extends Controller
         }
 
         return ['label' => 'On Time', 'tone' => 'success'];
+    }
+
+    private function buildTodayAttendanceStatus(?AttendanceLog $todayAttendance): ?array
+    {
+        if (! $todayAttendance?->time_in) {
+            return null;
+        }
+
+        if (! $todayAttendance->time_out) {
+            return ['label' => 'Time Out Missing', 'tone' => 'warning'];
+        }
+
+        return ['label' => 'Attendance Complete', 'tone' => 'primary'];
     }
 }
