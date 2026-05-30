@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\EmployeeScheduleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\View\View;
 
 class EmployeeScheduleController extends Controller
@@ -40,7 +41,34 @@ class EmployeeScheduleController extends Controller
 
     public function store(StoreEmployeeScheduleRequest $request): RedirectResponse
     {
-        $this->employeeScheduleService->create($request->validated());
+        $validated = $request->validated();
+        $baseData = Arr::only($validated, [
+            'user_id',
+            'branch_id',
+            'schedule_date',
+            'schedule_type',
+            'time_in',
+            'time_out',
+            'break_start',
+            'break_end',
+            'is_rest_day',
+        ]);
+
+        if ((bool) ($validated['bulk_mode'] ?? false)) {
+            $result = $this->employeeScheduleService->createForDateRange(array_merge($baseData, [
+                'date_from' => $validated['date_from'] ?? null,
+                'date_to' => $validated['date_to'] ?? null,
+                'weekdays' => $validated['weekdays'] ?? [],
+            ]));
+
+            if (($result['total'] ?? 0) === 0) {
+                return redirect()->route('hr.schedules.index')->with('status', 'No schedules were created because no dates matched the selected weekdays.');
+            }
+
+            return redirect()->route('hr.schedules.index')->with('status', 'Bulk schedule saved for '.$result['total'].' day(s).');
+        }
+
+        $this->employeeScheduleService->create($baseData);
 
         return redirect()->route('hr.schedules.index')->with('status', 'Schedule saved successfully.');
     }

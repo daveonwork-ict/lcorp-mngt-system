@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\EmployeeSchedule;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class EmployeeScheduleService
@@ -35,6 +37,40 @@ class EmployeeScheduleService
         $this->auditLogService->record('hr_schedules', 'schedule_saved', [], $schedule->toArray(), $schedule->branch_id, 'Employee schedule saved');
 
         return $schedule;
+    }
+
+    public function createForDateRange(array $data): array
+    {
+        $weekdays = collect($data['weekdays'] ?? [])->map(static fn ($day) => (int) $day)->unique()->values()->all();
+        $startDate = Carbon::parse($data['date_from'])->startOfDay();
+        $endDate = Carbon::parse($data['date_to'])->startOfDay();
+
+        $template = Arr::only($data, [
+            'user_id',
+            'branch_id',
+            'schedule_type',
+            'time_in',
+            'time_out',
+            'break_start',
+            'break_end',
+            'is_rest_day',
+        ]);
+
+        $created = 0;
+
+        for ($cursor = $startDate->copy(); $cursor->lte($endDate); $cursor->addDay()) {
+            if (! in_array($cursor->dayOfWeek, $weekdays, true)) {
+                continue;
+            }
+
+            $this->create(array_merge($template, [
+                'schedule_date' => $cursor->toDateString(),
+            ]));
+
+            $created++;
+        }
+
+        return ['total' => $created];
     }
 
     public function update(EmployeeSchedule $schedule, array $data): EmployeeSchedule

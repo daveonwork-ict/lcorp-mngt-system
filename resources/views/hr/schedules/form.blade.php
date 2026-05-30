@@ -12,6 +12,19 @@
     $selectedBreakStart = old('break_start', $schedule->break_start);
     $selectedBreakEnd = old('break_end', $schedule->break_end);
     $isRestDay = (bool) old('is_rest_day', $schedule->is_rest_day);
+    $isBulkMode = (bool) old('bulk_mode', false);
+    $bulkDateFrom = old('date_from', now()->startOfWeek()->toDateString());
+    $bulkDateTo = old('date_to', now()->endOfWeek()->toDateString());
+    $selectedWeekdays = collect(old('weekdays', [1, 2, 3, 4, 5]))->map(fn ($day) => (int) $day)->all();
+    $weekdayOptions = [
+        1 => 'Mon',
+        2 => 'Tue',
+        3 => 'Wed',
+        4 => 'Thu',
+        5 => 'Fri',
+        6 => 'Sat',
+        0 => 'Sun',
+    ];
 @endphp
 <form method="POST" action="{{ $mode === 'create' ? route('hr.schedules.store') : route('hr.schedules.update', $schedule) }}">
     @csrf
@@ -62,9 +75,52 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label>Schedule Date *</label>
-                    <input type="date" name="schedule_date" class="form-control" value="{{ $selectedDate }}" required>
+                    <input type="date" name="schedule_date" id="schedule_date" class="form-control" value="{{ $selectedDate }}" {{ $mode === 'create' ? '' : 'required' }}>
+                    @if ($mode === 'create')
+                        <small class="form-text text-muted">Single date mode only. Enable weekly bulk create below for date ranges.</small>
+                    @endif
                 </div>
             </div>
+
+            @if ($mode === 'create')
+                <div class="border rounded p-3 mb-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                        <div>
+                            <strong>Weekly Bulk Create</strong>
+                            <div class="small text-muted">Generate schedules for multiple dates in one save.</div>
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="bulk_mode" name="bulk_mode" value="1" @checked($isBulkMode)>
+                            <label class="custom-control-label" for="bulk_mode">Enable bulk mode</label>
+                        </div>
+                    </div>
+
+                    <div id="bulk_controls" class="{{ $isBulkMode ? '' : 'd-none' }}">
+                        <div class="form-row">
+                            <div class="col-md-3 mb-3">
+                                <label>Date From *</label>
+                                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ $bulkDateFrom }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label>Date To *</label>
+                                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ $bulkDateTo }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Weekdays *</label>
+                                <div class="d-flex flex-wrap align-items-center">
+                                    @foreach($weekdayOptions as $weekdayValue => $weekdayLabel)
+                                        <div class="custom-control custom-checkbox mr-3 mb-1">
+                                            <input type="checkbox" class="custom-control-input" id="weekday_{{ $weekdayValue }}" name="weekdays[]" value="{{ $weekdayValue }}" @checked(in_array($weekdayValue, $selectedWeekdays, true))>
+                                            <label class="custom-control-label" for="weekday_{{ $weekdayValue }}">{{ $weekdayLabel }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="form-row">
                 <div class="col-md-3 mb-3">
                     <label>Schedule Type *</label>
@@ -109,8 +165,12 @@
 document.addEventListener('DOMContentLoaded', function () {
     var userSelect = document.getElementById('user_id');
     var branchSelect = document.getElementById('branch_id');
+    var scheduleDate = document.getElementById('schedule_date');
     var scheduleType = document.getElementById('schedule_type');
     var restDayCheckbox = document.getElementById('is_rest_day');
+    var bulkModeCheckbox = document.getElementById('bulk_mode');
+    var bulkControls = document.getElementById('bulk_controls');
+    var bulkFields = ['date_from', 'date_to'];
     var timeFields = Array.prototype.slice.call(document.querySelectorAll('.js-time-field'));
     var presetButtons = Array.prototype.slice.call(document.querySelectorAll('.js-shift-preset'));
     var restDayButton = document.querySelector('.js-rest-day');
@@ -152,6 +212,28 @@ document.addEventListener('DOMContentLoaded', function () {
         branchSelect.value = primaryBranchId;
     }
 
+    function setBulkMode(enabled) {
+        if (!bulkModeCheckbox || !bulkControls) {
+            return;
+        }
+
+        bulkControls.classList.toggle('d-none', !enabled);
+
+        if (scheduleDate) {
+            scheduleDate.disabled = enabled;
+            scheduleDate.required = !enabled;
+        }
+
+        bulkFields.forEach(function (fieldId) {
+            var field = document.getElementById(fieldId);
+            if (!field) {
+                return;
+            }
+
+            field.required = enabled;
+        });
+    }
+
     restDayCheckbox.addEventListener('change', function () {
         setTimeFieldsDisabled(restDayCheckbox.checked);
     });
@@ -174,7 +256,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    if (bulkModeCheckbox) {
+        bulkModeCheckbox.addEventListener('change', function () {
+            setBulkMode(bulkModeCheckbox.checked);
+        });
+    }
+
     setTimeFieldsDisabled(restDayCheckbox.checked);
+    setBulkMode(bulkModeCheckbox ? bulkModeCheckbox.checked : false);
 });
 </script>
 @endsection
