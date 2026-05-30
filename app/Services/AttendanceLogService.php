@@ -94,6 +94,7 @@ class AttendanceLogService
 
     public function create(array $data): AttendanceLog
     {
+        $data = $this->resolveOwnedRecordData($data);
         $this->ensureBranchAccess((int) $data['branch_id']);
 
         if (! empty($data['selfie_time_in'])) {
@@ -121,6 +122,7 @@ class AttendanceLogService
 
     public function update(AttendanceLog $attendanceLog, array $data): AttendanceLog
     {
+        $data = $this->resolveOwnedRecordData($data, $attendanceLog);
         $this->ensureBranchAccess((int) $data['branch_id']);
 
         $before = $attendanceLog->toArray();
@@ -165,6 +167,18 @@ class AttendanceLogService
         if ($user && ! $this->branchAccessService->canAccessBranch($user, $branchId)) {
             abort(403, 'Branch attendance access denied.');
         }
+    }
+
+    private function resolveOwnedRecordData(array $data, ?AttendanceLog $attendanceLog = null): array
+    {
+        $user = Auth::user();
+
+        if ($user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true)) {
+            $data['user_id'] = $user->id;
+            $data['branch_id'] = $attendanceLog?->branch_id ?? $user->primary_branch_id ?? $data['branch_id'];
+        }
+
+        return $data;
     }
 
     private function attachCaptureMetadata(array $data): array

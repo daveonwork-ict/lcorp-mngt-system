@@ -17,13 +17,17 @@ class PayslipController extends Controller
 
     public function index(Request $request): View
     {
+        $selfService = $this->isSelfServiceUser();
+
         return view('hr.payslips.index', [
             'payslips' => Payslip::query()
                 ->with(['payrollItem.user', 'payrollItem.run.period'])
+                ->when($selfService, fn ($q) => $q->whereHas('payrollItem', fn ($item) => $item->where('user_id', $request->user()->id)))
                 ->latest('generated_at')
                 ->paginate(15)
                 ->withQueryString(),
-            'payrollItems' => PayrollItem::query()->with(['user', 'run.period'])->latest('id')->limit(200)->get(),
+            'payrollItems' => $selfService ? collect() : PayrollItem::query()->with(['user', 'run.period'])->latest('id')->limit(200)->get(),
+            'selfService' => $selfService,
         ]);
     }
 
@@ -36,6 +40,19 @@ class PayslipController extends Controller
 
     public function download(Payslip $payslip)
     {
+        $payslip->loadMissing('payrollItem');
+
+        if ($this->isSelfServiceUser() && $payslip->payrollItem?->user_id !== auth()->id()) {
+            abort(403, 'Payslip access denied.');
+        }
+
         return $this->payslipService->download($payslip);
+    }
+
+    private function isSelfServiceUser(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) $user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager', 'accounting_staff'], true);
     }
 }

@@ -2,6 +2,7 @@
 
 @section('page_title', 'Payslips')
 @section('content')
+@unless($selfService ?? false)
 <div class="card mb-3">
     <div class="card-header">Generate Payslip</div>
     <div class="card-body">
@@ -18,6 +19,7 @@
         </form>
     </div>
 </div>
+@endunless
 
 <div class="card">
     <div class="card-header">Generated Payslips</div>
@@ -43,6 +45,7 @@
 </div>
 @endsection
 
+@unless($selfService ?? false)
 @push('scripts')
 <script>
 document.getElementById('generate-payslip-form').addEventListener('submit', function (event) {
@@ -57,3 +60,4 @@ document.getElementById('generate-payslip-form').addEventListener('submit', func
 });
 </script>
 @endpush
+@endunless

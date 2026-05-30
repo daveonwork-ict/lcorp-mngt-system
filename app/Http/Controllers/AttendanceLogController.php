@@ -35,17 +35,21 @@ class AttendanceLogController extends Controller
 
     public function create(): View
     {
+        $selfService = $this->isSelfServiceUser();
+
         return view('hr.attendance.form', [
             'attendanceLog' => new AttendanceLog(),
             'branches' => Branch::query()->where('is_active', true)->orderBy('branch_name')->get(),
-            'users' => User::query()->orderBy('full_name')->get(),
+            'users' => $selfService ? collect([auth()->user()])->filter() : User::query()->orderBy('full_name')->get(),
             'schedules' => EmployeeSchedule::query()->orderByDesc('schedule_date')->limit(200)->get(),
             'mode' => 'create',
+            'selfService' => $selfService,
         ]);
     }
 
     public function show(AttendanceLog $attendance): View
     {
+        $this->authorizeSelfServiceRecord($attendance->user_id);
         $attendance->load(['user', 'branch', 'schedule']);
 
         return view('hr.attendance.show', [
@@ -57,6 +61,7 @@ class AttendanceLogController extends Controller
 
     public function reverify(AttendanceLog $attendance): RedirectResponse
     {
+        $this->authorizeSelfServiceRecord($attendance->user_id);
         $verificationIn = $this->attendanceLogService->verifyCaptureMetadata($attendance, 'in');
         $verificationOut = $this->attendanceLogService->verifyCaptureMetadata($attendance, 'out');
 
@@ -76,17 +81,22 @@ class AttendanceLogController extends Controller
 
     public function edit(AttendanceLog $attendance): View
     {
+        $this->authorizeSelfServiceRecord($attendance->user_id);
+        $selfService = $this->isSelfServiceUser();
+
         return view('hr.attendance.form', [
             'attendanceLog' => $attendance,
             'branches' => Branch::query()->where('is_active', true)->orderBy('branch_name')->get(),
-            'users' => User::query()->orderBy('full_name')->get(),
+            'users' => $selfService ? collect([auth()->user()])->filter() : User::query()->orderBy('full_name')->get(),
             'schedules' => EmployeeSchedule::query()->orderByDesc('schedule_date')->limit(200)->get(),
             'mode' => 'edit',
+            'selfService' => $selfService,
         ]);
     }
 
     public function update(UpdateAttendanceLogRequest $request, AttendanceLog $attendance): RedirectResponse
     {
+        $this->authorizeSelfServiceRecord($attendance->user_id);
         $this->attendanceLogService->update($attendance, $request->validated());
 
         return redirect()->route('hr.attendance.index')->with('status', 'Attendance updated successfully.');
@@ -94,6 +104,7 @@ class AttendanceLogController extends Controller
 
     public function previewSelfie(AttendanceLog $attendance, string $captureType): Response|RedirectResponse
     {
+        $this->authorizeSelfServiceRecord($attendance->user_id);
         abort_unless(in_array($captureType, ['in', 'out'], true), 404);
 
         $filePath = $captureType === 'out' ? $attendance->selfie_time_out_path : $attendance->selfie_time_in_path;
@@ -109,5 +120,19 @@ class AttendanceLogController extends Controller
             'attendance_log_'.$captureType,
             $attendance->id,
         );
+    }
+
+    private function isSelfServiceUser(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) $user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
+    }
+
+    private function authorizeSelfServiceRecord(int $userId): void
+    {
+        if ($this->isSelfServiceUser() && auth()->id() !== $userId) {
+            abort(403, 'Attendance access denied.');
+        }
     }
 }

@@ -2,14 +2,35 @@
 
 @section('page_title', $mode === 'create' ? 'Create Overtime Request' : 'Edit Overtime Request')
 @section('content')
+@php
+    $selfService = $selfService ?? false;
+    $currentUser = auth()->user();
+    $selectedBranch = $branches->firstWhere('id', old('branch_id', $overtimeRequest->branch_id ?: $currentUser?->primary_branch_id));
+@endphp
 <form method="POST" action="{{ $mode === 'create' ? route('hr.overtime.store') : route('hr.overtime.update', $overtimeRequest) }}">
     @csrf
     @if ($mode === 'edit') @method('PUT') @endif
     <div class="card">
         <div class="card-body">
             <div class="form-row">
-                <div class="col-md-4 mb-3"><label>Employee *</label><select name="user_id" class="form-control" required>@foreach($users as $user)<option value="{{ $user->id }}" @selected((int) old('user_id', $overtimeRequest->user_id) === $user->id)>{{ $user->display_name }}</option>@endforeach</select></div>
-                <div class="col-md-4 mb-3"><label>Branch *</label><select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $overtimeRequest->branch_id) === $branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select></div>
+                <div class="col-md-4 mb-3">
+                    <label>Employee *</label>
+                    @if ($selfService)
+                        <input type="hidden" name="user_id" value="{{ old('user_id', $overtimeRequest->user_id ?: $currentUser?->id) }}">
+                        <input class="form-control" value="{{ $currentUser?->display_name }}" disabled>
+                    @else
+                        <select name="user_id" class="form-control" required>@foreach($users as $user)<option value="{{ $user->id }}" @selected((int) old('user_id', $overtimeRequest->user_id) === $user->id)>{{ $user->display_name }}</option>@endforeach</select>
+                    @endif
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Branch *</label>
+                    @if ($selfService)
+                        <input type="hidden" name="branch_id" value="{{ old('branch_id', $overtimeRequest->branch_id ?: $currentUser?->primary_branch_id) }}">
+                        <input class="form-control" value="{{ $selectedBranch?->branch_name ?? $selectedBranch?->name }}" disabled>
+                    @else
+                        <select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $overtimeRequest->branch_id) === $branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select>
+                    @endif
+                </div>
                 <div class="col-md-4 mb-3"><label>Overtime Date *</label><input type="date" name="overtime_date" class="form-control" value="{{ old('overtime_date', optional($overtimeRequest->overtime_date)->format('Y-m-d')) }}" required></div>
             </div>
             <div class="form-row">

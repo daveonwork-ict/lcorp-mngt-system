@@ -8,6 +8,9 @@
         || is_null($attendanceLog->gps_latitude_in)
         || is_null($attendanceLog->gps_longitude_in)
         || ! data_get($attendanceLog->device_info_in, 'raw');
+    $selfService = $selfService ?? false;
+    $currentUser = auth()->user();
+    $selectedBranch = $branches->firstWhere('id', old('branch_id', $attendanceLog->branch_id ?: $currentUser?->primary_branch_id));
 @endphp
 <form method="POST" action="{{ $mode === 'create' ? route('hr.attendance.store') : route('hr.attendance.update', $attendanceLog) }}" enctype="multipart/form-data">
     @csrf
@@ -15,8 +18,24 @@
     <div class="card">
         <div class="card-body">
             <div class="form-row">
-                <div class="col-md-4 mb-3"><label>Employee *</label><select name="user_id" class="form-control" required>@foreach($users as $user)<option value="{{ $user->id }}" @selected((int) old('user_id', $attendanceLog->user_id) === $user->id)>{{ $user->display_name }}</option>@endforeach</select></div>
-                <div class="col-md-4 mb-3"><label>Branch *</label><select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $attendanceLog->branch_id) === $branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select></div>
+                <div class="col-md-4 mb-3">
+                    <label>Employee *</label>
+                    @if ($selfService)
+                        <input type="hidden" name="user_id" value="{{ old('user_id', $attendanceLog->user_id ?: $currentUser?->id) }}">
+                        <input class="form-control" value="{{ $currentUser?->display_name }}" disabled>
+                    @else
+                        <select name="user_id" class="form-control" required>@foreach($users as $user)<option value="{{ $user->id }}" @selected((int) old('user_id', $attendanceLog->user_id) === $user->id)>{{ $user->display_name }}</option>@endforeach</select>
+                    @endif
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Branch *</label>
+                    @if ($selfService)
+                        <input type="hidden" name="branch_id" value="{{ old('branch_id', $attendanceLog->branch_id ?: $currentUser?->primary_branch_id) }}">
+                        <input class="form-control" value="{{ $selectedBranch?->branch_name ?? $selectedBranch?->name }}" disabled>
+                    @else
+                        <select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $attendanceLog->branch_id) === $branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select>
+                    @endif
+                </div>
                 <div class="col-md-4 mb-3"><label>Date *</label><input type="date" name="attendance_date" class="form-control" value="{{ old('attendance_date', optional($attendanceLog->attendance_date)->format('Y-m-d') ?: now()->toDateString()) }}" required></div>
             </div>
             <div class="form-row">

@@ -29,11 +29,14 @@ class OvertimeRequestController extends Controller
 
     public function create(): View
     {
+        $selfService = $this->isSelfServiceUser();
+
         return view('hr.overtime.form', [
             'overtimeRequest' => new OvertimeRequest(),
             'branches' => Branch::query()->where('is_active', true)->orderBy('branch_name')->get(),
-            'users' => User::query()->orderBy('full_name')->get(),
+            'users' => $selfService ? collect([auth()->user()])->filter() : User::query()->orderBy('full_name')->get(),
             'mode' => 'create',
+            'selfService' => $selfService,
         ]);
     }
 
@@ -46,16 +49,21 @@ class OvertimeRequestController extends Controller
 
     public function edit(OvertimeRequest $overtime): View
     {
+        $this->authorizeSelfServiceRecord($overtime->user_id);
+        $selfService = $this->isSelfServiceUser();
+
         return view('hr.overtime.form', [
             'overtimeRequest' => $overtime,
             'branches' => Branch::query()->where('is_active', true)->orderBy('branch_name')->get(),
-            'users' => User::query()->orderBy('full_name')->get(),
+            'users' => $selfService ? collect([auth()->user()])->filter() : User::query()->orderBy('full_name')->get(),
             'mode' => 'edit',
+            'selfService' => $selfService,
         ]);
     }
 
     public function update(UpdateOvertimeRequestRequest $request, OvertimeRequest $overtime): RedirectResponse
     {
+        $this->authorizeSelfServiceRecord($overtime->user_id);
         $this->overtimeRequestService->update($overtime, $request->validated());
 
         return redirect()->route('hr.overtime.index')->with('status', 'Overtime request updated successfully.');
@@ -73,5 +81,19 @@ class OvertimeRequestController extends Controller
         $this->overtimeRequestService->review($overtime, 'reject');
 
         return back()->with('status', 'Overtime request rejected.');
+    }
+
+    private function isSelfServiceUser(): bool
+    {
+        $user = auth()->user();
+
+        return (bool) $user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
+    }
+
+    private function authorizeSelfServiceRecord(int $userId): void
+    {
+        if ($this->isSelfServiceUser() && auth()->id() !== $userId) {
+            abort(403, 'Overtime request access denied.');
+        }
     }
 }

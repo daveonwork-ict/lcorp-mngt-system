@@ -32,13 +32,8 @@ class OvertimeRequestService
 
     public function create(array $data): OvertimeRequest
     {
+        $data = $this->resolveOwnedRecordData($data);
         $this->ensureBranchAccess((int) $data['branch_id']);
-
-        $user = Auth::user();
-
-        if ($user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true)) {
-            $data['user_id'] = $user->id;
-        }
 
         $data['status'] = 'pending_manager';
 
@@ -51,6 +46,7 @@ class OvertimeRequestService
 
     public function update(OvertimeRequest $overtimeRequest, array $data): OvertimeRequest
     {
+        $data = $this->resolveOwnedRecordData($data, $overtimeRequest);
         $this->ensureBranchAccess((int) $data['branch_id']);
 
         $before = $overtimeRequest->toArray();
@@ -102,5 +98,17 @@ class OvertimeRequestService
         if ($user && ! $this->branchAccessService->canAccessBranch($user, $branchId)) {
             abort(403, 'Branch overtime access denied.');
         }
+    }
+
+    private function resolveOwnedRecordData(array $data, ?OvertimeRequest $overtimeRequest = null): array
+    {
+        $user = Auth::user();
+
+        if ($user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true)) {
+            $data['user_id'] = $user->id;
+            $data['branch_id'] = $overtimeRequest?->branch_id ?? $user->primary_branch_id ?? $data['branch_id'];
+        }
+
+        return $data;
     }
 }

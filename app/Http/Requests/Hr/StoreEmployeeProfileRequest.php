@@ -15,7 +15,15 @@ class StoreEmployeeProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id', 'unique:employee_profiles,user_id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id', 'unique:employee_profiles,user_id', 'required_without:create_user_account'],
+            'create_user_account' => ['nullable', 'boolean'],
+            'account_first_name' => ['nullable', 'string', 'max:120', 'required_if:create_user_account,1'],
+            'account_last_name' => ['nullable', 'string', 'max:120', 'required_if:create_user_account,1'],
+            'account_email' => ['nullable', 'email', 'max:150', 'required_if:create_user_account,1', 'unique:users,email'],
+            'account_username' => ['nullable', 'string', 'max:120', 'required_if:create_user_account,1', 'unique:users,username'],
+            'account_mobile_number' => ['nullable', 'string', 'max:50'],
+            'account_employee_code' => ['nullable', 'string', 'max:120', 'unique:users,employee_code'],
+            'account_password' => ['nullable', 'string', 'min:8', 'required_if:create_user_account,1', 'confirmed'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'position_id' => ['nullable', 'integer', 'exists:positions,id'],
             'birthdate' => ['nullable', 'date'],

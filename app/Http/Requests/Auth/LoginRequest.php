@@ -41,19 +41,15 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $login = $this->string('login')->trim()->toString();
-        $credentials = [
-            'password' => $this->string('password')->toString(),
-        ];
+        $password = $this->string('password')->toString();
 
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            $credentials['email'] = $login;
-        } else {
-            $credentials['name'] = $login;
-        }
+        $authenticated = filter_var($login, FILTER_VALIDATE_EMAIL)
+            ? Auth::attempt(['email' => $login, 'password' => $password], $this->boolean('remember'))
+            : Auth::attempt(['username' => $login, 'password' => $password], $this->boolean('remember'));
 
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
+        if (! $authenticated) {
             $matchedUser = User::query()
-                ->when(filter_var($login, FILTER_VALIDATE_EMAIL), fn ($q) => $q->where('email', $login), fn ($q) => $q->where('username', $login)->orWhere('name', $login))
+                ->when(filter_var($login, FILTER_VALIDATE_EMAIL), fn ($q) => $q->where('email', $login), fn ($q) => $q->where('username', $login))
                 ->first();
 
             app(LoginSecurityService::class)->logFailure($matchedUser?->id, $login, 'Failed login attempt');

@@ -144,7 +144,6 @@
                 @endif
 
                 @foreach ($modules as $module)
-                    @continue(! auth()->user()?->hasPermission($module['permission']))
                     @php
                         $iconClass = $moduleIcons[$module['slug']] ?? 'fas fa-circle';
                         $treeItems = $moduleTreeMenus[$module['slug']] ?? [];
@@ -152,10 +151,12 @@
                             return auth()->user()?->hasPermission($item['permission'] ?? '') ?? false;
                         })->values();
                         $isTreeMenu = $visibleTreeItems->isNotEmpty();
+                        $canOpenModule = auth()->user()?->hasPermission($module['permission']) || $isTreeMenu;
                         $isTreeMenuOpen = $isTreeMenu && $visibleTreeItems->contains(function (array $item): bool {
                             return request()->routeIs($item['active'] ?? $item['route']);
                         });
                     @endphp
+                    @continue(! $canOpenModule)
                     @if ($isTreeMenu)
                         <li class="nav-item {{ $isTreeMenuOpen ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ $isTreeMenuOpen ? 'active' : '' }}">
