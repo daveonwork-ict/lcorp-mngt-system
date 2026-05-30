@@ -58,10 +58,10 @@
                                             {{ $employeePanel['profile']['today_schedule']['window'] }}
                                             <span class="text-muted">({{ $employeePanel['profile']['today_schedule']['date'] }})</span>
                                             @if($employeePanel['profile']['today_shift_status'])
-                                                <span class="badge badge-{{ $employeePanel['profile']['today_shift_status']['tone'] }} ml-1">{{ $employeePanel['profile']['today_shift_status']['label'] }}</span>
+                                                <span class="badge badge-{{ $employeePanel['profile']['today_shift_status']['tone'] }} ml-1" title="Shift timing status">{{ $employeePanel['profile']['today_shift_status']['label'] }}</span>
                                             @endif
                                             @if($employeePanel['profile']['today_attendance_status'])
-                                                <span class="badge badge-{{ $employeePanel['profile']['today_attendance_status']['tone'] }} ml-1">{{ $employeePanel['profile']['today_attendance_status']['label'] }}</span>
+                                                <span class="badge badge-{{ $employeePanel['profile']['today_attendance_status']['tone'] }} ml-1" title="Attendance completion status">{{ $employeePanel['profile']['today_attendance_status']['label'] }}</span>
                                             @endif
                                         @else
                                             <span class="text-muted">No schedule set</span>
@@ -75,6 +75,15 @@
                                         @else
                                             <span class="text-muted">No upcoming shift</span>
                                         @endif
+                                    </dd>
+                                    <dt class="col-sm-4">Badge Guide</dt>
+                                    <dd class="col-sm-8">
+                                        <div class="d-flex flex-wrap align-items-center">
+                                            <span class="badge badge-success mr-1 mb-1" title="Clock-in is on or before schedule">On Time</span>
+                                            <span class="badge badge-danger mr-1 mb-1" title="Clock-in is after scheduled time">Late</span>
+                                            <span class="badge badge-warning mr-1 mb-1" title="No time-in or no time-out yet">Pending</span>
+                                            <span class="badge badge-primary mb-1" title="Time-in and time-out are both recorded">Complete</span>
+                                        </div>
                                     </dd>
                                 </dl>
                             </div>
