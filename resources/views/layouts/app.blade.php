@@ -113,6 +113,7 @@
             }
         }
     </style>
+    @stack('styles')
     @stack('head')
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">

@@ -172,6 +172,7 @@
             <strong id="touchKeypadTitle">Numeric Keypad</strong>
             <button type="button" class="btn btn-sm btn-light border" id="touchKeypadClose">Close</button>
         </div>
+        <div id="touchKeypadHint" class="small text-muted mb-2"></div>
         <input id="touchKeypadDisplay" class="form-control form-control-lg text-right mb-2" readonly>
         <div class="touch-keypad-grid mb-2">
             <button type="button" class="btn btn-light border" data-key="7">7</button>
@@ -224,20 +225,42 @@
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.5);
-    z-index: 1060;
+    z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    opacity: 1;
+    transition: opacity 180ms ease;
 }
 
 .touch-keypad-panel {
     width: 100%;
-    max-width: 420px;
+    max-width: 440px;
+    max-height: 92vh;
+    overflow: auto;
     background: #ffffff;
     border-radius: 14px;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
     padding: 1rem;
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.touch-keypad-backdrop.is-hidden {
+    opacity: 0;
+}
+
+.touch-keypad-backdrop.is-hidden .touch-keypad-panel {
+    transform: translateY(18px) scale(0.98);
+    opacity: 0;
+}
+
+#touchKeypadDisplay {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .touch-keypad-grid {
@@ -247,8 +270,9 @@
 }
 
 .touch-keypad-grid .btn {
-    min-height: 56px;
-    font-size: 1.1rem;
+    min-height: 62px;
+    font-size: 1.2rem;
+    font-weight: 700;
 }
 
 @media (max-width: 991.98px) {
@@ -258,6 +282,31 @@
 
     .touch-product-btn {
         min-height: 116px;
+    }
+
+    .touch-keypad-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .touch-keypad-panel {
+        max-width: 100%;
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        padding: 0.9rem;
+        box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.35);
+        transform: translateY(0);
+        transition: transform 220ms ease;
+    }
+
+    .touch-keypad-backdrop.is-hidden .touch-keypad-panel {
+        transform: translateY(100%);
+        opacity: 1;
+    }
+
+    .touch-keypad-grid .btn {
+        min-height: 70px;
+        font-size: 1.28rem;
     }
 }
 </style>
@@ -278,6 +327,7 @@
     const keypadBackdrop = document.getElementById('touchKeypadBackdrop');
     const keypadDisplay = document.getElementById('touchKeypadDisplay');
     const keypadTitle = document.getElementById('touchKeypadTitle');
+    const keypadHint = document.getElementById('touchKeypadHint');
 
     function formatMoney(value) {
         return 'PHP ' + value.toFixed(2);
@@ -442,14 +492,31 @@
     function openKeypad(context) {
         keypadContext = context;
         keypadTitle.textContent = context.title || 'Numeric Keypad';
+        if (context.mode === 'amount') {
+            keypadHint.textContent = 'Total due: ' + formatMoney(computedTotal > 0 ? computedTotal : 0);
+        } else if (context.mode === 'qty') {
+            keypadHint.textContent = 'Enter item quantity';
+        } else if (context.mode === 'price') {
+            keypadHint.textContent = 'Enter item selling price';
+        } else {
+            keypadHint.textContent = '';
+        }
         keypadDisplay.value = context.value || '';
+        keypadBackdrop.classList.add('is-hidden');
         keypadBackdrop.classList.remove('d-none');
+        requestAnimationFrame(() => {
+            keypadBackdrop.classList.remove('is-hidden');
+        });
     }
 
     function closeKeypad() {
-        keypadContext = null;
-        keypadDisplay.value = '';
-        keypadBackdrop.classList.add('d-none');
+        keypadBackdrop.classList.add('is-hidden');
+        setTimeout(() => {
+            keypadContext = null;
+            keypadDisplay.value = '';
+            keypadHint.textContent = '';
+            keypadBackdrop.classList.add('d-none');
+        }, 220);
     }
 
     function sanitizeKeypadValue(value, mode) {
