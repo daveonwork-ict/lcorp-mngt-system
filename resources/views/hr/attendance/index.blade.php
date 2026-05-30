@@ -25,7 +25,10 @@
                     <td>{{ optional($log->time_out)->format('Y-m-d H:i') ?: '-' }}</td>
                     <td>{{ ucfirst($log->attendance_status) }}</td>
                     <td>{{ $log->selfie_time_in_path ? 'Captured' : 'N/A' }}</td>
-                    <td><a href="{{ route('hr.attendance.edit', $log) }}" class="btn btn-xs btn-outline-primary">Edit</a></td>
+                    <td>
+                        <a href="{{ route('hr.attendance.show', $log) }}" class="btn btn-xs btn-outline-secondary">View</a>
+                        <a href="{{ route('hr.attendance.edit', $log) }}" class="btn btn-xs btn-outline-primary">Edit</a>
+                    </td>
                 </tr>
             @empty
                 <tr><td colspan="8" class="text-center text-muted">No attendance records found.</td></tr>

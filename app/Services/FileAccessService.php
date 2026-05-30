@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -17,6 +18,31 @@ class FileAccessService
     }
 
     public function download(string $module, string $filePath, string $fileName, ?int $branchId = null, ?string $referenceType = null, ?int $referenceId = null): StreamedResponse|RedirectResponse
+    {
+        $validated = $this->validateAccess($module, $filePath, $fileName, $branchId, $referenceType, $referenceId);
+
+        if ($validated instanceof RedirectResponse) {
+            return $validated;
+        }
+
+        return Storage::download($filePath, $fileName);
+    }
+
+    public function preview(string $module, string $filePath, string $fileName, ?int $branchId = null, ?string $referenceType = null, ?int $referenceId = null): Response|RedirectResponse
+    {
+        $validated = $this->validateAccess($module, $filePath, $fileName, $branchId, $referenceType, $referenceId);
+
+        if ($validated instanceof RedirectResponse) {
+            return $validated;
+        }
+
+        return response(Storage::get($filePath), 200, [
+            'Content-Type' => Storage::mimeType($filePath) ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+        ]);
+    }
+
+    private function validateAccess(string $module, string $filePath, string $fileName, ?int $branchId = null, ?string $referenceType = null, ?int $referenceId = null): bool|RedirectResponse
     {
         $user = auth()->user();
         if (! $user instanceof User) {
@@ -66,6 +92,6 @@ class FileAccessService
             'reference_id' => $referenceId,
         ], $branchId, 'Sensitive file downloaded');
 
-        return Storage::download($filePath, $fileName);
+        return true;
     }
 }

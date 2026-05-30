@@ -134,6 +134,55 @@ if ('serviceWorker' in navigator) {
         }).catch(function () {});
     });
 })();
+
+(function () {
+    const storageKey = 'rms.sidebar.scrollTop';
+
+    const resolveSidebarScroller = function () {
+        return document.querySelector('.main-sidebar .sidebar')
+            || document.querySelector('.main-sidebar .os-content')
+            || null;
+    };
+
+    const saveSidebarScroll = function () {
+        const scroller = resolveSidebarScroller();
+        if (!scroller) return;
+
+        sessionStorage.setItem(storageKey, String(scroller.scrollTop || 0));
+    };
+
+    const restoreSidebarScroll = function () {
+        const scroller = resolveSidebarScroller();
+        if (!scroller) return;
+
+        const saved = Number(sessionStorage.getItem(storageKey) || 0);
+        if (Number.isFinite(saved) && saved > 0) {
+            scroller.scrollTop = saved;
+            return;
+        }
+
+        const activeLink = document.querySelector('.main-sidebar .nav-link.active');
+        if (activeLink) {
+            activeLink.scrollIntoView({ block: 'nearest' });
+        }
+    };
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.main-sidebar a.nav-link')) {
+            return;
+        }
+
+        saveSidebarScroll();
+    });
+
+    window.addEventListener('beforeunload', saveSidebarScroll);
+
+    window.addEventListener('load', function () {
+        restoreSidebarScroll();
+        setTimeout(restoreSidebarScroll, 120);
+        setTimeout(restoreSidebarScroll, 350);
+    });
+})();
 </script>
 @stack('scripts')
 </body>

@@ -9,14 +9,18 @@ use App\Models\Branch;
 use App\Models\EmployeeSchedule;
 use App\Models\User;
 use App\Services\AttendanceLogService;
+use App\Services\FileAccessService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AttendanceLogController extends Controller
 {
-    public function __construct(private readonly AttendanceLogService $attendanceLogService)
-    {
+    public function __construct(
+        private readonly AttendanceLogService $attendanceLogService,
+        private readonly FileAccessService $fileAccessService,
+    ) {
     }
 
     public function index(Request $request): View
@@ -38,6 +42,29 @@ class AttendanceLogController extends Controller
             'schedules' => EmployeeSchedule::query()->orderByDesc('schedule_date')->limit(200)->get(),
             'mode' => 'create',
         ]);
+    }
+
+    public function show(AttendanceLog $attendance): View
+    {
+        $attendance->load(['user', 'branch', 'schedule']);
+
+        return view('hr.attendance.show', [
+            'attendanceLog' => $attendance,
+            'verificationIn' => $this->attendanceLogService->verifyCaptureMetadata($attendance, 'in'),
+            'verificationOut' => $this->attendanceLogService->verifyCaptureMetadata($attendance, 'out'),
+        ]);
+    }
+
+    public function reverify(AttendanceLog $attendance): RedirectResponse
+    {
+        $verificationIn = $this->attendanceLogService->verifyCaptureMetadata($attendance, 'in');
+        $verificationOut = $this->attendanceLogService->verifyCaptureMetadata($attendance, 'out');
+
+        $summary = collect([$verificationIn['label'] ?? 'N/A', $verificationOut['label'] ?? 'N/A'])->implode(' / ');
+
+        return redirect()
+            ->route('hr.attendance.show', $attendance)
+            ->with('status', 'Attendance capture verification refreshed: '.$summary);
     }
 
     public function store(StoreAttendanceLogRequest $request): RedirectResponse
@@ -63,5 +90,24 @@ class AttendanceLogController extends Controller
         $this->attendanceLogService->update($attendance, $request->validated());
 
         return redirect()->route('hr.attendance.index')->with('status', 'Attendance updated successfully.');
+    }
+
+    public function previewSelfie(AttendanceLog $attendance, string $captureType): Response|RedirectResponse
+    {
+        abort_unless(in_array($captureType, ['in', 'out'], true), 404);
+
+        $filePath = $captureType === 'out' ? $attendance->selfie_time_out_path : $attendance->selfie_time_in_path;
+        if (! $filePath) {
+            return back()->withErrors(['file' => 'Selfie file not found.']);
+        }
+
+        return $this->fileAccessService->preview(
+            'hr_attendance',
+            $filePath,
+            basename($filePath),
+            $attendance->branch_id,
+            'attendance_log_'.$captureType,
+            $attendance->id,
+        );
     }
 }
