@@ -15,7 +15,7 @@
     <style>
         body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
         .main-sidebar { min-height: 100vh; }
-        .content-wrapper { min-height: calc(100vh - 114px); }
+        .content-wrapper { min-height: calc(100vh - 114px); padding-bottom: 66px; }
         .metric-card { min-height: 118px; }
         .touch-btn { min-height: 52px; font-size: 1rem; }
         .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
@@ -93,12 +93,28 @@
             justify-content: center;
         }
 
+        .main-footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1035;
+            margin-left: 0;
+            background: #ffffff;
+            border-top: 1px solid #dfe4ea;
+            padding: 0.45rem 0.9rem;
+        }
+
+        body.sidebar-collapse .main-footer {
+            left: 0;
+        }
+
         @media (max-width: 767px) {
             .content-header h1 { font-size: 1.15rem; }
             .touch-btn { width: 100%; }
             .table-responsive { font-size: 0.88rem; }
             .main-sidebar { width: 250px; }
-            .content-wrapper { min-height: calc(100vh - 102px); }
+            .content-wrapper { min-height: calc(100vh - 102px); padding-bottom: 74px; }
             .small-box .inner h4 { font-size: 1.15rem; }
             .pagination {
                 justify-content: center;
@@ -110,6 +126,11 @@
             }
             .sidebar-edge-toggle {
                 display: none !important;
+            }
+
+            .main-footer {
+                left: 0;
+                padding: 0.5rem 0.75rem;
             }
         }
     </style>

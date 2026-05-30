@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DevicePreferenceController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PWAController;
 use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,10 @@ Route::post('/pwa/installed', [PWAController::class, 'installed'])->name('pwa.in
 require __DIR__.'/auth.php';
 
 Route::middleware(['auth', 'branch.access', 'session.track'])->group(function (): void {
+    Route::get('/my-profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/my-profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/my-profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
     require __DIR__.'/dashboard.php';
     require __DIR__.'/hr.php';
     require __DIR__.'/inventory.php';

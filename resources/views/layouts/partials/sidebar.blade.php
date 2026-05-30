@@ -131,11 +131,8 @@
         <span class="brand-text font-weight-light">RMS</span>
     </a>
 
-    <div class="sidebar">
-        <div class="px-3 pt-2 pb-1 text-xs text-light" style="opacity:.85; font-size:.72rem;">
-            Retail Management System<br>Developed by Daveonwork IT Solutions
-        </div>
-        <nav class="mt-2">
+    <div class="sidebar d-flex flex-column">
+        <nav class="mt-2 flex-grow-1">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
                 @if ($dashboardRoute)
                     <li class="nav-item">
@@ -208,5 +205,13 @@
                 @endif
             </ul>
         </nav>
+
+        <div style="margin-top:auto; padding:0.8rem 0.95rem calc(0.95rem + env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,0.2); background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.24));">
+            <span style="display:block; color:rgba(255,255,255,0.98); font-size:0.86rem; font-weight:700; letter-spacing:.03em; margin-bottom:0.2rem;">Retail Management System</span>
+            <div style="color:rgba(255,255,255,0.78); font-size:0.56rem; line-height:1.25;">
+                Developed by
+                <a href="https://www.daveonwork.com" target="_blank" rel="noopener noreferrer" style="color:#ffffff; text-decoration:underline; text-underline-offset:2px; font-weight:500;">Daveonwork IT Solutions</a>
+            </div>
+        </div>
     </div>
 </aside>

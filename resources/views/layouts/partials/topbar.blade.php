@@ -12,6 +12,9 @@
             <a class="nav-link" data-toggle="dropdown" href="#"><i class="far fa-user"></i></a>
             <div class="dropdown-menu dropdown-menu-right">
                 <span class="dropdown-item-text">{{ auth()->user()?->name }}</span>
+                <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                    <i class="far fa-id-badge mr-2"></i>My Profile
+                </a>
                 <div class="dropdown-divider"></div>
                 <form action="{{ route('logout') }}" method="POST" class="px-3">
                     @csrf
