@@ -7,6 +7,10 @@ use App\Models\AnnouncementRead;
 use App\Models\AnnouncementTarget;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
+use App\Models\ChatMessage;
+use App\Models\ChatMessageRead;
+use App\Models\ChatRoom;
+use App\Models\ChatRoomMember;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\PayrollItem;
@@ -43,7 +47,7 @@ class EmployeeDashboardFeatureTest extends TestCase
         $role = Role::query()->where('code', 'staff_user')->firstOrFail();
 
         $permissionIds = Permission::query()
-            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements'])
+            ->whereIn('code', ['view_branch_dashboard', 'view_attendance', 'view_leave_requests', 'view_overtime_requests', 'view_payslips', 'view_announcements', 'access_chat'])
             ->pluck('id')
             ->all();
 
@@ -60,6 +64,18 @@ class EmployeeDashboardFeatureTest extends TestCase
         ]);
 
         $user->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
+
+        $teammate = User::factory()->create([
+            'role_id' => $role->id,
+            'primary_branch_id' => $branch->id,
+            'status' => 'active',
+            'is_active' => true,
+            'username' => 'dashboard.mate',
+            'full_name' => 'Dashboard Teammate',
+            'name' => 'Dashboard Teammate',
+        ]);
+
+        $teammate->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
 
         AttendanceLog::query()->create([
             'user_id' => $user->id,
@@ -147,6 +163,40 @@ class EmployeeDashboardFeatureTest extends TestCase
             'target_id' => null,
         ]);
 
+        $room = ChatRoom::query()->create([
+            'room_number' => 'ROOM-DASH-001',
+            'room_name' => 'Team Pulse',
+            'room_type' => 'group',
+            'branch_id' => $branch->id,
+            'created_by' => $teammate->id,
+            'status' => 'active',
+        ]);
+
+        ChatRoomMember::query()->create([
+            'chat_room_id' => $room->id,
+            'user_id' => $user->id,
+            'role_in_room' => 'member',
+            'joined_at' => now()->subDay(),
+            'status' => 'active',
+        ]);
+
+        ChatRoomMember::query()->create([
+            'chat_room_id' => $room->id,
+            'user_id' => $teammate->id,
+            'role_in_room' => 'moderator',
+            'joined_at' => now()->subDay(),
+            'status' => 'active',
+        ]);
+
+        $message = ChatMessage::query()->create([
+            'chat_room_id' => $room->id,
+            'sender_id' => $teammate->id,
+            'branch_id' => $branch->id,
+            'message_body' => 'Please confirm your shift handoff before lunch.',
+            'message_type' => 'text',
+            'status' => 'sent',
+        ]);
+
         $this->actingAs($user)
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
             ->assertOk()
@@ -159,13 +209,24 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('Pending Overtime Requests')
             ->assertSee('Payslips Available')
             ->assertSee('Unread Announcements')
+            ->assertSee('Unread Messages')
             ->assertSee('Latest Announcements')
             ->assertSee('Payroll release reminder')
+            ->assertSee('Recent Chat Activity')
+            ->assertSee('Team Pulse')
+            ->assertSee('Please confirm your shift handoff before lunch.')
+            ->assertSee('Mark Room Read')
             ->assertSee('Mark Read')
             ->assertSee('Acknowledge');
 
         $this->actingAs($user)
             ->post(route('announcements.read.mark', $announcement), [
+                '_token' => csrf_token(),
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->post(route('chat.rooms.read.mark', $room), [
                 '_token' => csrf_token(),
             ])
             ->assertRedirect();
@@ -176,10 +237,16 @@ class EmployeeDashboardFeatureTest extends TestCase
             'acknowledgment_status' => 'read',
         ]);
 
+        $this->assertDatabaseHas((new ChatMessageRead())->getTable(), [
+            'chat_message_id' => $message->id,
+            'user_id' => $user->id,
+        ]);
+
         $this->actingAs($user)
             ->get(route('dashboard.branch', ['branch_id' => $branch->id]))
             ->assertOk()
             ->assertSee('Read')
+            ->assertSee('Seen')
             ->assertSee('Acknowledge');
     }
 }

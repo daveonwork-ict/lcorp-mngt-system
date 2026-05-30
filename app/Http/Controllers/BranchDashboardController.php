@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
+use App\Models\ChatMessage;
+use App\Models\ChatRoomMember;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\Payslip;
@@ -76,6 +78,38 @@ class BranchDashboardController extends Controller
             ->latest('generated_at')
             ->first();
 
+        $canAccessChat = $user->hasPermission('access_chat');
+        $roomIds = $canAccessChat
+            ? ChatRoomMember::query()
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->pluck('chat_room_id')
+                ->all()
+            : [];
+
+        $unreadMessages = $canAccessChat
+            ? ChatMessage::query()
+                ->whereIn('chat_room_id', $roomIds)
+                ->where('sender_id', '!=', $userId)
+                ->whereNull('deleted_at')
+                ->whereDoesntHave('reads', fn ($reads) => $reads->where('user_id', $userId))
+                ->count()
+            : 0;
+
+        $recentMessages = $canAccessChat
+            ? ChatMessage::query()
+                ->with([
+                    'sender',
+                    'room',
+                    'reads' => fn ($reads) => $reads->where('user_id', $userId),
+                ])
+                ->whereIn('chat_room_id', $roomIds)
+                ->whereNull('deleted_at')
+                ->latest('id')
+                ->limit(4)
+                ->get()
+            : collect();
+
         $announcementQuery = Announcement::query()
             ->with([
                 'creator',
@@ -107,17 +141,26 @@ class BranchDashboardController extends Controller
             ->limit(4)
             ->get();
 
-        return [
-            'cards' => [
+        $cards = [
                 ['label' => 'Attendance This Month', 'value' => AttendanceLog::query()->where('user_id', $userId)->whereBetween('attendance_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])->count(), 'url' => route('hr.attendance.index')],
                 ['label' => 'Pending Leave Requests', 'value' => LeaveRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.leaves.index')],
                 ['label' => 'Pending Overtime Requests', 'value' => OvertimeRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.overtime.index')],
                 ['label' => 'Payslips Available', 'value' => Payslip::query()->whereHas('payrollItem', fn ($q) => $q->where('user_id', $userId))->count(), 'url' => route('hr.payslips.index')],
                 ['label' => 'Unread Announcements', 'value' => $unreadAnnouncements, 'url' => route('announcements.index')],
-            ],
+            ];
+
+        if ($canAccessChat) {
+            $cards[] = ['label' => 'Unread Messages', 'value' => $unreadMessages, 'url' => route('chat.index')];
+        }
+
+        return [
+            'cards' => $cards,
             'latest_attendance' => $latestAttendance,
             'latest_payslip' => $latestPayslip,
             'recent_announcements' => $recentAnnouncements,
+            'can_access_chat' => $canAccessChat,
+            'active_chat_rooms' => count($roomIds),
+            'recent_messages' => $recentMessages,
         ];
     }
 }

@@ -103,7 +103,7 @@
         </div>
 
         <div class="row mt-3">
-            <div class="col-12">
+            <div class="{{ $employeePanel['can_access_chat'] ? 'col-xl-7 mb-3 mb-xl-0' : 'col-12' }}">
                 <div class="card shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <strong>Latest Announcements</strong>
@@ -158,6 +158,57 @@
                     </div>
                 </div>
             </div>
+
+            @if($employeePanel['can_access_chat'])
+                <div class="col-xl-5">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Recent Chat Activity</strong>
+                            <a href="{{ route('chat.index') }}" class="btn btn-sm btn-outline-primary">Open Chat</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap mb-3">
+                                <span class="badge badge-light border mr-2 mb-2">Active Rooms: {{ $employeePanel['active_chat_rooms'] }}</span>
+                                <span class="badge badge-light border mb-2">Unread Messages: {{ collect($employeePanel['cards'])->firstWhere('label', 'Unread Messages')['value'] ?? 0 }}</span>
+                            </div>
+
+                            @forelse($employeePanel['recent_messages'] as $message)
+                                @php
+                                    $isUnread = $message->sender_id !== auth()->id() && $message->reads->isEmpty();
+                                @endphp
+                                <div class="border rounded px-3 py-2 mb-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="font-weight-semibold">{{ $message->room?->room_name ?? 'Chat Room' }}</div>
+                                            <div class="small text-muted">{{ $message->sender?->display_name ?? 'Unknown sender' }}</div>
+                                        </div>
+                                        <div class="text-right ml-2">
+                                            @if($isUnread)
+                                                <span class="badge badge-warning">Unread</span>
+                                            @else
+                                                <span class="badge badge-light border">Seen</span>
+                                            @endif
+                                            <div class="small text-muted mt-1">{{ optional($message->created_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                        </div>
+                                    </div>
+                                    <p class="mb-2 mt-2 text-muted">{{ \Illuminate\Support\Str::limit($message->message_body, 120) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ route('chat.rooms.show', $message->room) }}" class="btn btn-xs btn-outline-primary">Open Room</a>
+                                        @if($isUnread)
+                                            <form action="{{ route('chat.rooms.read.mark', $message->room) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button class="btn btn-xs btn-outline-success">Mark Room Read</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-muted mb-0">No recent chat activity yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
