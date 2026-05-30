@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AttendanceLog;
 use App\Models\Branch;
+use App\Models\EmployeeSchedule;
 use App\Models\LeaveRequest;
 use App\Models\OvertimeRequest;
 use App\Models\PayrollItem;
@@ -18,6 +19,7 @@ use Database\Seeders\PermissionsSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -205,6 +207,58 @@ class EmployeeSelfServiceFeatureTest extends TestCase
         $this->assertSame($staffUser->id, $overtime->user_id);
     }
 
+    public function test_self_service_attendance_is_blocked_without_plotted_schedule(): void
+    {
+        Storage::fake();
+
+        [$branch, $staffUser] = $this->makeStaffUsers();
+
+        EmployeeSchedule::query()->where('user_id', $staffUser->id)->delete();
+
+        $this->actingAs($staffUser)
+            ->post(route('hr.attendance.store'), [
+                'user_id' => $staffUser->id,
+                'branch_id' => $branch->id,
+                'attendance_date' => now('Asia/Manila')->toDateString(),
+                'time_in' => now('Asia/Manila')->format('Y-m-d H:i:s'),
+                'selfie_time_in' => UploadedFile::fake()->image('time-in.jpg'),
+                'device_info_in' => 'Staff Device',
+                'attendance_status' => 'present',
+            ])
+            ->assertSessionHasErrors('schedule_id');
+
+        $this->assertDatabaseCount((new AttendanceLog())->getTable(), 0);
+    }
+
+    public function test_self_service_attendance_index_only_shows_own_attendance(): void
+    {
+        [$branch, $staffUser, $otherUser] = $this->makeStaffUsers();
+
+        AttendanceLog::query()->create([
+            'user_id' => $staffUser->id,
+            'branch_id' => $branch->id,
+            'attendance_date' => now('Asia/Manila')->toDateString(),
+            'time_in' => now()->subHour(),
+            'attendance_status' => 'present',
+            'device_info_in' => ['raw' => 'Staff Device'],
+        ]);
+
+        AttendanceLog::query()->create([
+            'user_id' => $otherUser->id,
+            'branch_id' => $branch->id,
+            'attendance_date' => now('Asia/Manila')->toDateString(),
+            'time_in' => now()->subMinutes(30),
+            'attendance_status' => 'present',
+            'device_info_in' => ['raw' => 'Other Device'],
+        ]);
+
+        $this->actingAs($staffUser)
+            ->get(route('hr.attendance.index'))
+            ->assertOk()
+            ->assertSee($staffUser->display_name)
+            ->assertDontSee($otherUser->display_name);
+    }
+
     private function makeStaffUsers(): array
     {
         $branch = Branch::query()->where('code', 'MAIN')->firstOrFail();
@@ -241,6 +295,16 @@ class EmployeeSelfServiceFeatureTest extends TestCase
 
         $staffUser->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
         $otherUser->branches()->syncWithoutDetaching([$branch->id => ['is_primary' => true]]);
+
+        EmployeeSchedule::query()->create([
+            'user_id' => $staffUser->id,
+            'branch_id' => $branch->id,
+            'schedule_date' => Carbon::today('Asia/Manila')->toDateString(),
+            'schedule_type' => 'fixed',
+            'time_in' => '09:00',
+            'time_out' => '18:00',
+            'is_rest_day' => false,
+        ]);
 
         return [$branch, $staffUser, $otherUser];
     }

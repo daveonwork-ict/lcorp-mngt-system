@@ -3,20 +3,35 @@
 @section('page_title', $mode === 'create' ? 'Record Attendance' : 'Edit Attendance')
 @section('content')
 @php
+    $manilaNow = now('Asia/Manila');
+    $selfService = $selfService ?? false;
+    $attendanceAction = $attendanceAction ?? 'clock_in';
+    $isCreateSelfService = $mode === 'create' && $selfService;
+    $isClockOutMode = $isCreateSelfService && $attendanceAction === 'clock_out';
+    $isClockInMode = ! $isClockOutMode;
+    $clockInValue = old('time_in', $attendanceLog->time_in ? $attendanceLog->time_in->timezone('Asia/Manila')->format('Y-m-d H:i:s') : ($mode === 'create' ? $manilaNow->format('Y-m-d H:i:s') : ''));
+    $clockOutValue = old('time_out', $attendanceLog->time_out ? $attendanceLog->time_out->timezone('Asia/Manila')->format('Y-m-d H:i:s') : '');
     $needsDeviceAssist = $mode === 'create'
         || ! $attendanceLog->selfie_time_in_path
         || is_null($attendanceLog->gps_latitude_in)
         || is_null($attendanceLog->gps_longitude_in)
         || ! data_get($attendanceLog->device_info_in, 'raw');
-    $selfService = $selfService ?? false;
     $currentUser = auth()->user();
     $selectedBranch = $branches->firstWhere('id', old('branch_id', $attendanceLog->branch_id ?: $currentUser?->primary_branch_id));
+    $selectedSchedule = ($todaySchedule ?? null) ?: $schedules->firstWhere('id', old('schedule_id', $attendanceLog->schedule_id));
 @endphp
 <form method="POST" action="{{ $mode === 'create' ? route('hr.attendance.store') : route('hr.attendance.update', $attendanceLog) }}" enctype="multipart/form-data">
     @csrf
     @if ($mode === 'edit') @method('PUT') @endif
     <div class="card">
         <div class="card-body">
+            @if ($isCreateSelfService)
+                <div class="alert alert-info">
+                    <strong>{{ $isClockOutMode ? 'Clock-Out Detected' : 'Clock-In Detected' }}</strong>
+                    <div class="mb-0 small">The system auto-detected your attendance action for today and will compute lateness/undertime/overtime automatically.</div>
+                </div>
+            @endif
+
             <div class="form-row">
                 <div class="col-md-4 mb-3">
                     <label>Employee *</label>
@@ -36,17 +51,52 @@
                         <select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected((int) old('branch_id', $attendanceLog->branch_id) === $branch->id)>{{ $branch->branch_name ?? $branch->name }}</option>@endforeach</select>
                     @endif
                 </div>
-                <div class="col-md-4 mb-3"><label>Date *</label><input type="date" name="attendance_date" class="form-control" value="{{ old('attendance_date', optional($attendanceLog->attendance_date)->format('Y-m-d') ?: now()->toDateString()) }}" required></div>
+                <div class="col-md-4 mb-3"><label>Date *</label><input type="date" name="attendance_date" class="form-control" value="{{ old('attendance_date', optional($attendanceLog->attendance_date)->format('Y-m-d') ?: $manilaNow->toDateString()) }}" required></div>
             </div>
             <div class="form-row">
-                <div class="col-md-3 mb-3"><label>Schedule</label><select name="schedule_id" class="form-control"><option value="">None</option>@foreach($schedules as $schedule)<option value="{{ $schedule->id }}" @selected((int) old('schedule_id', $attendanceLog->schedule_id) === $schedule->id)>{{ optional($schedule->schedule_date)->format('Y-m-d') }} - {{ $schedule->user?->display_name }}</option>@endforeach</select></div>
-                <div class="col-md-3 mb-3"><label>Time In *</label><input type="datetime-local" name="time_in" class="form-control" value="{{ old('time_in', optional($attendanceLog->time_in)->format('Y-m-d\TH:i')) }}" required></div>
-                <div class="col-md-3 mb-3"><label>Time Out</label><input type="datetime-local" name="time_out" class="form-control" value="{{ old('time_out', optional($attendanceLog->time_out)->format('Y-m-d\TH:i')) }}"></div>
-                <div class="col-md-3 mb-3"><label>Status *</label><select name="attendance_status" class="form-control" required>@foreach(['present','late','absent','undertime','overtime','leave','holiday'] as $status)<option value="{{ $status }}" @selected(old('attendance_status', $attendanceLog->attendance_status ?: 'present') === $status)>{{ ucfirst($status) }}</option>@endforeach</select></div>
+                <div class="col-md-3 mb-3">
+                    <label>Schedule</label>
+                    @if ($isCreateSelfService)
+                        <input type="hidden" name="schedule_id" value="{{ $selectedSchedule?->id }}">
+                        <input class="form-control" value="{{ $selectedSchedule ? (optional($selectedSchedule->schedule_date)->format('Y-m-d').' | '.substr((string) $selectedSchedule->time_in, 0, 5).' - '.substr((string) $selectedSchedule->time_out, 0, 5)) : 'No schedule' }}" readonly>
+                    @else
+                        <select name="schedule_id" class="form-control"><option value="">None</option>@foreach($schedules as $schedule)<option value="{{ $schedule->id }}" @selected((int) old('schedule_id', $attendanceLog->schedule_id) === $schedule->id)>{{ optional($schedule->schedule_date)->format('Y-m-d') }} - {{ $schedule->user?->display_name }}</option>@endforeach</select>
+                    @endif
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label>Clock In Timestamp (UTC+8) *</label>
+                    <input id="clock_in_display" type="text" class="form-control" value="{{ $clockInValue }}" placeholder="Tap the button to stamp" readonly>
+                    <input id="time_in" type="hidden" name="time_in" value="{{ $clockInValue }}" required>
+                    <button type="button" id="stamp_clock_in_btn" class="btn btn-outline-primary btn-sm mt-2" {{ $isClockOutMode ? 'disabled' : '' }}>Use Current Manila Time for Clock In</button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label>Clock Out Timestamp (UTC+8)</label>
+                    <input id="clock_out_display" type="text" class="form-control" value="{{ $clockOutValue }}" placeholder="Tap when clocking out" readonly>
+                    <input id="time_out" type="hidden" name="time_out" value="{{ $clockOutValue }}">
+                    <button type="button" id="stamp_clock_out_btn" class="btn btn-outline-secondary btn-sm mt-2" {{ $isClockInMode ? 'disabled' : '' }}>Use Current Manila Time for Clock Out</button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label>Status *</label>
+                    @if ($isCreateSelfService)
+                        <input type="hidden" name="attendance_status" value="present">
+                        <input class="form-control" value="Auto-computed after save" readonly>
+                    @else
+                        <select name="attendance_status" class="form-control" required>@foreach(['present','late','absent','undertime','overtime','leave','holiday'] as $status)<option value="{{ $status }}" @selected(old('attendance_status', $attendanceLog->attendance_status ?: 'present') === $status)>{{ ucfirst($status) }}</option>@endforeach</select>
+                    @endif
+                    <small class="text-muted d-block mt-2">Manila now: <span id="manila_now">--</span></small>
+                </div>
             </div>
             <div class="form-row">
-                <div class="col-md-3 mb-3"><label>Selfie Time-In {{ $mode === 'create' ? '*' : '' }}</label><input id="selfie_time_in" type="file" name="selfie_time_in" accept="image/*" capture="user" class="form-control-file" {{ $mode === 'create' ? 'required' : '' }}></div>
-                <div class="col-md-3 mb-3"><label>Selfie Time-Out</label><input id="selfie_time_out" type="file" name="selfie_time_out" accept="image/*" capture="user" class="form-control-file"></div>
+                <div class="col-md-3 mb-3">
+                    <label>Clock-In Selfie {{ $mode === 'create' && $isClockInMode ? '*' : '' }}</label>
+                    <input id="selfie_time_in" type="file" name="selfie_time_in" accept="image/*" capture="user" class="d-none" {{ $mode === 'create' && $isClockInMode ? 'required' : '' }}>
+                    <div class="small {{ $attendanceLog->selfie_time_in_path ? 'text-success' : 'text-muted' }}">Manual upload disabled. Use camera capture button.</div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label>Clock-Out Selfie {{ $mode === 'create' && $isClockOutMode ? '*' : '' }}</label>
+                    <input id="selfie_time_out" type="file" name="selfie_time_out" accept="image/*" capture="user" class="d-none" {{ $mode === 'create' && $isClockOutMode ? 'required' : '' }}>
+                    <div class="small {{ $attendanceLog->selfie_time_out_path ? 'text-success' : 'text-muted' }}">Manual upload disabled. Use camera capture button.</div>
+                </div>
                 <div class="col-md-3 mb-3"><label>Device Info In *</label><input name="device_info_in" class="form-control" value="{{ old('device_info_in', data_get($attendanceLog->device_info_in, 'raw')) }}" required></div>
                 <div class="col-md-3 mb-3"><label>Device Info Out</label><input name="device_info_out" class="form-control" value="{{ old('device_info_out', data_get($attendanceLog->device_info_out, 'raw')) }}"></div>
             </div>
@@ -63,8 +113,8 @@
                             <div class="col-lg-6">
                                 <div class="mb-2">
                                     <button type="button" id="open-camera-btn" class="btn btn-outline-primary btn-sm">Open Camera</button>
-                                    <button type="button" id="capture-in-btn" class="btn btn-primary btn-sm">Capture Time-In</button>
-                                    <button type="button" id="capture-out-btn" class="btn btn-secondary btn-sm">Capture Time-Out</button>
+                                    <button type="button" id="capture-in-btn" class="btn btn-primary btn-sm" {{ $isClockOutMode ? 'disabled' : '' }}>Capture Time-In</button>
+                                    <button type="button" id="capture-out-btn" class="btn btn-secondary btn-sm" {{ $isClockInMode ? 'disabled' : '' }}>Capture Time-Out</button>
                                 </div>
                                 <p id="camera-status" class="text-muted mb-2">Camera will auto-start if the browser allows it.</p>
                                 <div class="row">
@@ -104,10 +154,11 @@
 </form>
 @endsection
 
-@if ($needsDeviceAssist)
-    @push('scripts')
+@push('scripts')
         <script>
         (function () {
+            const needsDeviceAssist = @json($needsDeviceAssist);
+            const attendanceAction = @json($attendanceAction);
             const deviceIn = document.querySelector('input[name="device_info_in"]');
             const deviceOut = document.querySelector('input[name="device_info_out"]');
 
@@ -118,6 +169,15 @@
             if (deviceOut && !deviceOut.value) {
                 deviceOut.value = navigator.userAgent;
             }
+
+            const attendanceDateInput = document.querySelector('input[name="attendance_date"]');
+            const clockInDisplay = document.getElementById('clock_in_display');
+            const clockOutDisplay = document.getElementById('clock_out_display');
+            const clockInInput = document.getElementById('time_in');
+            const clockOutInput = document.getElementById('time_out');
+            const stampClockInBtn = document.getElementById('stamp_clock_in_btn');
+            const stampClockOutBtn = document.getElementById('stamp_clock_out_btn');
+            const manilaNow = document.getElementById('manila_now');
 
             const latIn = document.getElementById('gps_latitude_in');
             const lngIn = document.getElementById('gps_longitude_in');
@@ -178,6 +238,82 @@
 
             let stream = null;
 
+            const resolveManilaParts = function (date) {
+                const parts = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Manila',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                }).formatToParts(date).reduce(function (acc, part) {
+                    acc[part.type] = part.value;
+
+                    return acc;
+                }, {});
+
+                return {
+                    date: parts.year + '-' + parts.month + '-' + parts.day,
+                    dateTime: parts.year + '-' + parts.month + '-' + parts.day + ' ' + parts.hour + ':' + parts.minute + ':' + parts.second,
+                };
+            };
+
+            const updateManilaNow = function () {
+                if (!manilaNow) {
+                    return;
+                }
+
+                manilaNow.textContent = resolveManilaParts(new Date()).dateTime;
+            };
+
+            const stampClock = function (type) {
+                const nowParts = resolveManilaParts(new Date());
+
+                if (type === 'in') {
+                    if (clockInInput) clockInInput.value = nowParts.dateTime;
+                    if (clockInDisplay) clockInDisplay.value = nowParts.dateTime;
+                    if (attendanceDateInput && !attendanceDateInput.value) {
+                        attendanceDateInput.value = nowParts.date;
+                    }
+                }
+
+                if (type === 'out') {
+                    if (clockOutInput) clockOutInput.value = nowParts.dateTime;
+                    if (clockOutDisplay) clockOutDisplay.value = nowParts.dateTime;
+                }
+
+                updateManilaNow();
+            };
+
+            if (stampClockInBtn) {
+                stampClockInBtn.addEventListener('click', function () {
+                    stampClock('in');
+                });
+            }
+
+            if (stampClockOutBtn) {
+                stampClockOutBtn.addEventListener('click', function () {
+                    stampClock('out');
+                });
+            }
+
+            updateManilaNow();
+            setInterval(updateManilaNow, 1000);
+
+            if (clockInInput && !clockInInput.value) {
+                stampClock('in');
+            }
+
+            if (attendanceAction === 'clock_out' && clockOutInput && !clockOutInput.value) {
+                stampClock('out');
+            }
+
+            if (!needsDeviceAssist) {
+                return;
+            }
+
             const setFile = function (input, blob, filename) {
                 const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
                 const transfer = new DataTransfer();
@@ -192,7 +328,7 @@
                 const employeeName = userSelect && userSelect.selectedOptions.length
                     ? userSelect.selectedOptions[0].text.trim()
                     : 'Unknown Employee';
-                const timestamp = new Date().toLocaleString();
+                const timestamp = resolveManilaParts(new Date()).dateTime;
                 const gpsText = (gpsLat && gpsLng)
                     ? (gpsLat + ', ' + gpsLng)
                     : 'GPS unavailable';
@@ -201,7 +337,7 @@
                     'Attendance ' + captureLabel,
                     'Branch: ' + branchName,
                     'Name: ' + employeeName,
-                    'Time: ' + timestamp,
+                    'Time (UTC+8): ' + timestamp,
                     'GPS: ' + gpsText,
                 ];
 
@@ -265,7 +401,9 @@
 
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                drawWatermark(ctx, canvas.width, canvas.height, captureType === 'out' ? 'Time-Out' : 'Time-In', gps.lat, gps.lng);
+                const isClockOut = captureType === 'out';
+                stampClock(isClockOut ? 'out' : 'in');
+                drawWatermark(ctx, canvas.width, canvas.height, isClockOut ? 'Clock-Out' : 'Clock-In', gps.lat, gps.lng);
 
                 canvas.toBlob(function (blob) {
                     if (!blob) return;
@@ -306,5 +444,4 @@
             startCamera();
         })();
         </script>
-    @endpush
-@endif
+@endpush

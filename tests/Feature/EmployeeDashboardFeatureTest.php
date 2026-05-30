@@ -106,9 +106,9 @@ class EmployeeDashboardFeatureTest extends TestCase
         AttendanceLog::query()->create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,
-            'attendance_date' => Carbon::today()->toDateString(),
-            'time_in' => Carbon::today()->setTime(9, 15),
-            'time_out' => Carbon::today()->setTime(18, 5),
+            'attendance_date' => Carbon::today('Asia/Manila')->toDateString(),
+            'time_in' => Carbon::today('Asia/Manila')->setTime(9, 15)->utc(),
+            'time_out' => Carbon::today('Asia/Manila')->setTime(18, 5)->utc(),
             'device_info_in' => ['raw' => 'Dashboard Browser'],
             'attendance_status' => 'present',
         ]);
@@ -243,7 +243,7 @@ class EmployeeDashboardFeatureTest extends TestCase
             ->assertSee('09:00 - 18:00')
             ->assertSee('10:00 - 19:00')
             ->assertSee('Late by 15m')
-            ->assertSee('Attendance Complete')
+            ->assertSee('Clock-In/Out Complete')
             ->assertSee('Last Attendance Sync')
             ->assertSee('Source: Attendance')
             ->assertSee('updated')
@@ -350,9 +350,9 @@ class EmployeeDashboardFeatureTest extends TestCase
         $attendance = AttendanceLog::query()->create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,
-            'attendance_date' => Carbon::today()->toDateString(),
-            'time_in' => Carbon::today()->setTime(8, 30),
-            'time_out' => Carbon::today()->setTime(17, 30),
+            'attendance_date' => Carbon::today('Asia/Manila')->toDateString(),
+            'time_in' => Carbon::today('Asia/Manila')->setTime(8, 30)->utc(),
+            'time_out' => Carbon::today('Asia/Manila')->setTime(17, 30)->utc(),
             'device_info_in' => ['raw' => 'Dashboard Browser'],
             'attendance_status' => 'present',
         ]);

@@ -23,6 +23,8 @@ use Illuminate\View\View;
 
 class BranchDashboardController extends Controller
 {
+    private const ATTENDANCE_TIMEZONE = 'Asia/Manila';
+
     public function __construct(
         private readonly DashboardAnalyticsService $dashboardService,
         private readonly ReportFilterService $filterService,
@@ -76,9 +78,11 @@ class BranchDashboardController extends Controller
             ->orderByDesc('id')
             ->first();
 
+        $todayDate = Carbon::now(self::ATTENDANCE_TIMEZONE)->toDateString();
+
         $todayAttendance = AttendanceLog::query()
             ->where('user_id', $userId)
-            ->whereDate('attendance_date', now()->toDateString())
+            ->whereDate('attendance_date', $todayDate)
             ->latest('id')
             ->first();
 
@@ -130,13 +134,13 @@ class BranchDashboardController extends Controller
 
         $todaySchedule = EmployeeSchedule::query()
             ->where('user_id', $userId)
-            ->whereDate('schedule_date', now()->toDateString())
+            ->whereDate('schedule_date', $todayDate)
             ->latest('id')
             ->first();
 
         $nextSchedule = EmployeeSchedule::query()
             ->where('user_id', $userId)
-            ->whereDate('schedule_date', '>', now()->toDateString())
+            ->whereDate('schedule_date', '>', $todayDate)
             ->orderBy('schedule_date')
             ->orderBy('time_in')
             ->orderBy('id')
@@ -175,8 +179,10 @@ class BranchDashboardController extends Controller
             ->limit(4)
             ->get();
 
+        $manilaNow = Carbon::now(self::ATTENDANCE_TIMEZONE);
+
         $cards = [
-                ['label' => 'Attendance This Month', 'value' => AttendanceLog::query()->where('user_id', $userId)->whereBetween('attendance_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])->count(), 'url' => route('hr.attendance.index')],
+            ['label' => 'Attendance This Month', 'value' => AttendanceLog::query()->where('user_id', $userId)->whereBetween('attendance_date', [$manilaNow->copy()->startOfMonth()->toDateString(), $manilaNow->copy()->endOfMonth()->toDateString()])->count(), 'url' => route('hr.attendance.index')],
                 ['label' => 'Pending Leave Requests', 'value' => LeaveRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.leaves.index')],
                 ['label' => 'Pending Overtime Requests', 'value' => OvertimeRequest::query()->where('user_id', $userId)->whereIn('status', ['pending_manager', 'pending_hr'])->count(), 'url' => route('hr.overtime.index')],
                 ['label' => 'Payslips Available', 'value' => Payslip::query()->whereHas('payrollItem', fn ($q) => $q->where('user_id', $userId))->count(), 'url' => route('hr.payslips.index')],
@@ -270,13 +276,13 @@ class BranchDashboardController extends Controller
         }
 
         if (! $todayAttendance?->time_in) {
-            return ['label' => 'No Time In Yet', 'tone' => 'warning'];
+            return ['label' => 'No Clock-In Yet', 'tone' => 'warning'];
         }
 
-        $scheduledAt = Carbon::parse($todaySchedule->schedule_date->format('Y-m-d').' '.$todaySchedule->time_in);
+        $scheduledAt = Carbon::parse($todaySchedule->schedule_date->format('Y-m-d').' '.$todaySchedule->time_in, self::ATTENDANCE_TIMEZONE);
         $actualTimeIn = $todayAttendance->time_in instanceof Carbon
-            ? $todayAttendance->time_in
-            : Carbon::parse($todayAttendance->time_in);
+            ? $todayAttendance->time_in->copy()->timezone(self::ATTENDANCE_TIMEZONE)
+            : Carbon::parse($todayAttendance->time_in)->timezone(self::ATTENDANCE_TIMEZONE);
 
         if ($actualTimeIn->greaterThan($scheduledAt)) {
             $lateMinutes = $scheduledAt->diffInMinutes($actualTimeIn);
@@ -294,10 +300,10 @@ class BranchDashboardController extends Controller
         }
 
         if (! $todayAttendance->time_out) {
-            return ['label' => 'Time Out Missing', 'tone' => 'warning'];
+            return ['label' => 'Clock-Out Pending', 'tone' => 'warning'];
         }
 
-        return ['label' => 'Attendance Complete', 'tone' => 'primary'];
+        return ['label' => 'Clock-In/Out Complete', 'tone' => 'primary'];
     }
 
     private function resolveLastSyncMeta(?AttendanceLog $latestAttendance, ?EmployeeSchedule $todaySchedule, ?EmployeeSchedule $nextSchedule): ?array

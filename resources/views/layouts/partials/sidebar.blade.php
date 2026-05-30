@@ -1,5 +1,6 @@
 @php
     $modules = config('rms.modules', []);
+    $isSelfServiceRole = auth()->check() && ! in_array(auth()->user()?->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
     $isOwnerRole = auth()->user()?->role?->code === config('rms.owner_role_code');
     $dashboardRoute = auth()->user()?->hasPermission('view_executive_dashboard')
         ? 'dashboard.owner'
@@ -133,8 +134,17 @@
     </a>
 
     <div class="sidebar d-flex flex-column">
-        <nav class="mt-2 flex-grow-1">
+        <nav class="mt-5 flex-grow-1">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                @if ($isSelfServiceRole && auth()->user()?->hasPermission('view_attendance'))
+                    <li class="nav-item">
+                        <a href="{{ route('hr.attendance.index') }}" class="nav-link {{ request()->routeIs('hr.attendance.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-user-check"></i>
+                            <p>My Attendance</p>
+                        </a>
+                    </li>
+                @endif
+
                 @if ($dashboardRoute)
                     <li class="nav-item">
                         <a href="{{ route($dashboardRoute) }}" class="nav-link {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">

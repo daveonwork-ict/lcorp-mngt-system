@@ -91,10 +91,12 @@
                                         <div class="d-flex flex-wrap align-items-center">
                                             <span class="badge badge-success mr-1 mb-1" title="Clock-in is on or before schedule">On Time</span>
                                             <span class="badge badge-danger mr-1 mb-1" title="Clock-in is after scheduled time">Late</span>
-                                            <span class="badge badge-warning mr-1 mb-1" title="No time-in or no time-out yet">Pending</span>
-                                            <span class="badge badge-primary mb-1" title="Time-in and time-out are both recorded">Complete</span>
+                                            <span class="badge badge-warning mr-1 mb-1" title="No clock-in or no clock-out yet">Pending</span>
+                                            <span class="badge badge-primary mb-1" title="Clock-in and clock-out are both recorded">Complete</span>
                                         </div>
                                     </dd>
+                                    <dt class="col-sm-4">Manila Time</dt>
+                                    <dd class="col-sm-8"><span id="dashboard-manila-now">--</span> <span class="text-muted">(UTC+8)</span></dd>
                                 </dl>
 
                                 @if(($employeePanel['profile']['last_sync']['freshness']['label'] ?? null) === 'Outdated')
@@ -170,10 +172,10 @@
                                 <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->attendance_date)->format('Y-m-d') }}</dd>
                                 <dt class="col-sm-4">Status</dt>
                                 <dd class="col-sm-8 text-capitalize">{{ str_replace('_', ' ', $employeePanel['latest_attendance']->attendance_status) }}</dd>
-                                <dt class="col-sm-4">Time In</dt>
-                                <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->time_in)->format('Y-m-d H:i') ?: 'N/A' }}</dd>
-                                <dt class="col-sm-4">Time Out</dt>
-                                <dd class="col-sm-8">{{ optional($employeePanel['latest_attendance']->time_out)->format('Y-m-d H:i') ?: 'N/A' }}</dd>
+                                <dt class="col-sm-4">Clock In (UTC+8)</dt>
+                                <dd class="col-sm-8">{{ $employeePanel['latest_attendance']->time_in ? $employeePanel['latest_attendance']->time_in->timezone('Asia/Manila')->format('Y-m-d H:i:s') : 'N/A' }}</dd>
+                                <dt class="col-sm-4">Clock Out (UTC+8)</dt>
+                                <dd class="col-sm-8">{{ $employeePanel['latest_attendance']->time_out ? $employeePanel['latest_attendance']->time_out->timezone('Asia/Manila')->format('Y-m-d H:i:s') : 'N/A' }}</dd>
                                 <dt class="col-sm-4">Branch</dt>
                                 <dd class="col-sm-8">{{ $employeePanel['latest_attendance']->branch?->branch_name ?? $employeePanel['latest_attendance']->branch?->name ?? 'N/A' }}</dd>
                             </dl>
@@ -452,6 +454,37 @@
 @endsection
 
 @push('scripts')
+<script>
+    (function () {
+        const target = document.getElementById('dashboard-manila-now');
+        if (!target) {
+            return;
+        }
+
+        const renderNow = function () {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+            }).formatToParts(new Date()).reduce(function (acc, part) {
+                acc[part.type] = part.value;
+
+                return acc;
+            }, {});
+
+            target.textContent = parts.year + '-' + parts.month + '-' + parts.day + ' ' + parts.hour + ':' + parts.minute + ':' + parts.second;
+        };
+
+        renderNow();
+        setInterval(renderNow, 1000);
+    })();
+</script>
+
 <script>
 const chartPayloads = @json($summary['charts']);
 Object.entries(chartPayloads).forEach(([chartKey, points]) => {

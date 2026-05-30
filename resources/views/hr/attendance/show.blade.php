@@ -20,8 +20,8 @@
                     <dt class="col-sm-4">Employee</dt><dd class="col-sm-8">{{ $attendanceLog->user?->display_name }}</dd>
                     <dt class="col-sm-4">Branch</dt><dd class="col-sm-8">{{ $attendanceLog->branch?->branch_name ?? $attendanceLog->branch?->name }}</dd>
                     <dt class="col-sm-4">Date</dt><dd class="col-sm-8">{{ optional($attendanceLog->attendance_date)->format('Y-m-d') }}</dd>
-                    <dt class="col-sm-4">Time In</dt><dd class="col-sm-8">{{ optional($attendanceLog->time_in)->format('Y-m-d H:i') ?: '-' }}</dd>
-                    <dt class="col-sm-4">Time Out</dt><dd class="col-sm-8">{{ optional($attendanceLog->time_out)->format('Y-m-d H:i') ?: '-' }}</dd>
+                    <dt class="col-sm-4">Clock In (UTC+8)</dt><dd class="col-sm-8">{{ $attendanceLog->time_in ? $attendanceLog->time_in->timezone('Asia/Manila')->format('Y-m-d H:i:s') : '-' }}</dd>
+                    <dt class="col-sm-4">Clock Out (UTC+8)</dt><dd class="col-sm-8">{{ $attendanceLog->time_out ? $attendanceLog->time_out->timezone('Asia/Manila')->format('Y-m-d H:i:s') : '-' }}</dd>
                     <dt class="col-sm-4">Status</dt><dd class="col-sm-8">{{ ucfirst($attendanceLog->attendance_status) }}</dd>
                     <dt class="col-sm-4">GPS In</dt><dd class="col-sm-8">{{ $attendanceLog->gps_latitude_in && $attendanceLog->gps_longitude_in ? $attendanceLog->gps_latitude_in.', '.$attendanceLog->gps_longitude_in : '-' }}</dd>
                     <dt class="col-sm-4">GPS Out</dt><dd class="col-sm-8">{{ $attendanceLog->gps_latitude_out && $attendanceLog->gps_longitude_out ? $attendanceLog->gps_latitude_out.', '.$attendanceLog->gps_longitude_out : '-' }}</dd>
@@ -35,7 +35,7 @@
     <div class="col-lg-7">
         @foreach (['in' => $verificationIn, 'out' => $verificationOut] as $captureType => $verification)
             @php
-                $label = $captureType === 'in' ? 'Time-In' : 'Time-Out';
+                $label = $captureType === 'in' ? 'Clock-In' : 'Clock-Out';
                 $path = $captureType === 'in' ? $attendanceLog->selfie_time_in_path : $attendanceLog->selfie_time_out_path;
                 $metadata = $captureType === 'in' ? $attendanceLog->capture_metadata_in : $attendanceLog->capture_metadata_out;
             @endphp

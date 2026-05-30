@@ -4,14 +4,19 @@ namespace App\Services;
 
 use App\Models\AttendanceLog;
 use App\Models\Branch;
+use App\Models\EmployeeSchedule;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceLogService
 {
+    private const ATTENDANCE_TIMEZONE = 'Asia/Manila';
+
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly BranchAccessService $branchAccessService,
@@ -95,7 +100,12 @@ class AttendanceLogService
     public function create(array $data): AttendanceLog
     {
         $data = $this->resolveOwnedRecordData($data);
+        $data = $this->normalizeAttendanceTimes($data);
         $this->ensureBranchAccess((int) $data['branch_id']);
+
+        if ($this->isSelfServiceContext()) {
+            return $this->recordSelfServiceAttendance($data);
+        }
 
         if (! empty($data['selfie_time_in'])) {
             $data['selfie_time_in_path'] = $data['selfie_time_in']->store('hr/attendance-selfies');
@@ -107,10 +117,16 @@ class AttendanceLogService
             unset($data['selfie_time_out']);
         }
 
+        $schedule = $this->resolveSchedule($data);
+        if ($schedule && empty($data['schedule_id'])) {
+            $data['schedule_id'] = $schedule->id;
+        }
+
         $data['device_info_in'] = ['raw' => (string) $data['device_info_in']];
         $data['device_info_out'] = ! empty($data['device_info_out']) ? ['raw' => (string) $data['device_info_out']] : null;
         $data['ip_address_in'] = request()->ip();
         $data['ip_address_out'] = request()->ip();
+        $data = $this->applyScheduleMetrics($data, $schedule);
         $data = $this->attachCaptureMetadata($data);
 
         $log = AttendanceLog::query()->create($data);
@@ -123,6 +139,7 @@ class AttendanceLogService
     public function update(AttendanceLog $attendanceLog, array $data): AttendanceLog
     {
         $data = $this->resolveOwnedRecordData($data, $attendanceLog);
+        $data = $this->normalizeAttendanceTimes($data);
         $this->ensureBranchAccess((int) $data['branch_id']);
 
         $before = $attendanceLog->toArray();
@@ -151,6 +168,11 @@ class AttendanceLogService
         $data['ip_address_out'] = request()->ip();
         $data['selfie_time_in_path'] = $data['selfie_time_in_path'] ?? $attendanceLog->selfie_time_in_path;
         $data['selfie_time_out_path'] = $data['selfie_time_out_path'] ?? $attendanceLog->selfie_time_out_path;
+        $schedule = $this->resolveSchedule($data);
+        if ($schedule && empty($data['schedule_id'])) {
+            $data['schedule_id'] = $schedule->id;
+        }
+        $data = $this->applyScheduleMetrics($data, $schedule);
         $data = $this->attachCaptureMetadata($data);
 
         $attendanceLog->update($data);
@@ -176,6 +198,213 @@ class AttendanceLogService
         if ($user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true)) {
             $data['user_id'] = $user->id;
             $data['branch_id'] = $attendanceLog?->branch_id ?? $user->primary_branch_id ?? $data['branch_id'];
+        }
+
+        return $data;
+    }
+
+    private function isSelfServiceContext(): bool
+    {
+        $user = Auth::user();
+
+        return (bool) $user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
+    }
+
+    private function resolveSchedule(array $data): ?EmployeeSchedule
+    {
+        if (! empty($data['schedule_id'])) {
+            return EmployeeSchedule::query()->find($data['schedule_id']);
+        }
+
+        if (empty($data['user_id']) || empty($data['attendance_date'])) {
+            return null;
+        }
+
+        return EmployeeSchedule::query()
+            ->where('user_id', $data['user_id'])
+            ->whereDate('schedule_date', (string) $data['attendance_date'])
+            ->latest('id')
+            ->first();
+    }
+
+    private function applyScheduleMetrics(array $data, ?EmployeeSchedule $schedule): array
+    {
+        if (! $schedule || $schedule->is_rest_day) {
+            return $data;
+        }
+
+        $attendanceDate = (string) ($data['attendance_date'] ?? optional($schedule->schedule_date)->toDateString());
+        $lateMinutes = 0;
+        $undertimeMinutes = 0;
+        $overtimeMinutes = 0;
+
+        if (! empty($data['time_in']) && $schedule->time_in) {
+            $actualTimeIn = ($data['time_in'] instanceof Carbon
+                ? $data['time_in']->copy()
+                : Carbon::parse((string) $data['time_in']))->timezone(self::ATTENDANCE_TIMEZONE);
+            $scheduledTimeIn = Carbon::parse($attendanceDate.' '.$schedule->time_in, self::ATTENDANCE_TIMEZONE);
+            $lateMinutes = max($scheduledTimeIn->diffInMinutes($actualTimeIn, false), 0);
+        }
+
+        if (! empty($data['time_out']) && $schedule->time_out) {
+            $actualTimeOut = ($data['time_out'] instanceof Carbon
+                ? $data['time_out']->copy()
+                : Carbon::parse((string) $data['time_out']))->timezone(self::ATTENDANCE_TIMEZONE);
+            $scheduledTimeOut = Carbon::parse($attendanceDate.' '.$schedule->time_out, self::ATTENDANCE_TIMEZONE);
+            $delta = $scheduledTimeOut->diffInMinutes($actualTimeOut, false);
+
+            if ($delta < 0) {
+                $undertimeMinutes = abs($delta);
+            } elseif ($delta > 0) {
+                $overtimeMinutes = $delta;
+            }
+        }
+
+        $status = 'present';
+        if ($undertimeMinutes > 0) {
+            $status = 'undertime';
+        } elseif ($overtimeMinutes > 0) {
+            $status = 'overtime';
+        } elseif ($lateMinutes > 0) {
+            $status = 'late';
+        }
+
+        $data['late_minutes'] = $lateMinutes;
+        $data['undertime_minutes'] = $undertimeMinutes;
+        $data['overtime_minutes'] = $overtimeMinutes;
+        $data['attendance_status'] = $status;
+
+        return $data;
+    }
+
+    private function recordSelfServiceAttendance(array $data): AttendanceLog
+    {
+        $todayDate = Carbon::now(self::ATTENDANCE_TIMEZONE)->toDateString();
+        $data['attendance_date'] = $todayDate;
+
+        $schedule = $this->resolveSchedule($data);
+        if (! $schedule) {
+            throw ValidationException::withMessages([
+                'schedule_id' => 'No plotted schedule for today. Attendance is not allowed.',
+            ]);
+        }
+
+        if ($schedule->is_rest_day) {
+            throw ValidationException::withMessages([
+                'schedule_id' => 'Today is marked as rest day. Attendance check-in is not allowed.',
+            ]);
+        }
+
+        $data['schedule_id'] = $schedule->id;
+
+        $todayLog = AttendanceLog::query()
+            ->where('user_id', $data['user_id'])
+            ->whereDate('attendance_date', $todayDate)
+            ->latest('id')
+            ->first();
+
+        if ($todayLog && $todayLog->time_in && $todayLog->time_out) {
+            throw ValidationException::withMessages([
+                'time_out' => 'Today\'s attendance is already completed.',
+            ]);
+        }
+
+        if (! $todayLog) {
+            if (empty($data['selfie_time_in'])) {
+                throw ValidationException::withMessages([
+                    'selfie_time_in' => 'Clock-in selfie capture is required.',
+                ]);
+            }
+
+            $data['time_in'] = $data['time_in'] ?? Carbon::now(self::ATTENDANCE_TIMEZONE)->utc();
+            $data['time_out'] = null;
+            $data['selfie_time_in_path'] = $data['selfie_time_in']->store('hr/attendance-selfies');
+            unset($data['selfie_time_in'], $data['selfie_time_out']);
+
+            $data['device_info_in'] = ['raw' => (string) $data['device_info_in']];
+            $data['device_info_out'] = null;
+            $data['ip_address_in'] = request()->ip();
+            $data['ip_address_out'] = null;
+            $data = $this->applyScheduleMetrics($data, $schedule);
+            $data = $this->attachCaptureMetadata($data);
+
+            $log = AttendanceLog::query()->create($data);
+            $this->auditLogService->record('hr_attendance', 'attendance_clocked_in', [], $log->toArray(), $log->branch_id, 'Attendance clock-in recorded');
+
+            return $log;
+        }
+
+        if (empty($data['selfie_time_out'])) {
+            throw ValidationException::withMessages([
+                'selfie_time_out' => 'Clock-out selfie capture is required.',
+            ]);
+        }
+
+        $before = $todayLog->toArray();
+        $clockOutAt = $data['time_out'] ?? Carbon::now(self::ATTENDANCE_TIMEZONE)->utc();
+        $selfieOutPath = $data['selfie_time_out']->store('hr/attendance-selfies');
+
+        $metadataData = [
+            'user_id' => $todayLog->user_id,
+            'branch_id' => $todayLog->branch_id,
+            'attendance_date' => $todayLog->attendance_date?->toDateString() ?? $todayDate,
+            'schedule_id' => $schedule->id,
+            'time_in' => $todayLog->time_in,
+            'time_out' => $clockOutAt,
+            'selfie_time_in_path' => $todayLog->selfie_time_in_path,
+            'selfie_time_out_path' => $selfieOutPath,
+            'gps_latitude_in' => $todayLog->gps_latitude_in,
+            'gps_longitude_in' => $todayLog->gps_longitude_in,
+            'gps_latitude_out' => $data['gps_latitude_out'] ?? $todayLog->gps_latitude_out,
+            'gps_longitude_out' => $data['gps_longitude_out'] ?? $todayLog->gps_longitude_out,
+            'device_info_in' => $todayLog->device_info_in,
+            'device_info_out' => ['raw' => (string) ($data['device_info_out'] ?? $data['device_info_in'])],
+            'ip_address_in' => $todayLog->ip_address_in,
+            'ip_address_out' => request()->ip(),
+            'late_minutes' => $todayLog->late_minutes,
+            'undertime_minutes' => $todayLog->undertime_minutes,
+            'overtime_minutes' => $todayLog->overtime_minutes,
+            'attendance_status' => $todayLog->attendance_status,
+        ];
+
+        $metadataData = $this->applyScheduleMetrics($metadataData, $schedule);
+        $metadataData = $this->attachCaptureMetadata($metadataData);
+
+        $todayLog->update([
+            'schedule_id' => $schedule->id,
+            'time_out' => $clockOutAt,
+            'selfie_time_out_path' => $selfieOutPath,
+            'gps_latitude_out' => $metadataData['gps_latitude_out'] ?? null,
+            'gps_longitude_out' => $metadataData['gps_longitude_out'] ?? null,
+            'device_info_out' => $metadataData['device_info_out'],
+            'ip_address_out' => request()->ip(),
+            'late_minutes' => $metadataData['late_minutes'],
+            'undertime_minutes' => $metadataData['undertime_minutes'],
+            'overtime_minutes' => $metadataData['overtime_minutes'],
+            'attendance_status' => $metadataData['attendance_status'],
+            'capture_metadata_in' => $metadataData['capture_metadata_in'],
+            'capture_metadata_out' => $metadataData['capture_metadata_out'],
+        ]);
+
+        $this->auditLogService->record('hr_attendance', 'attendance_clocked_out', $before, $todayLog->toArray(), $todayLog->branch_id, 'Attendance clock-out recorded');
+
+        return $todayLog;
+    }
+
+    private function normalizeAttendanceTimes(array $data): array
+    {
+        if (! empty($data['attendance_date'])) {
+            $data['attendance_date'] = Carbon::parse((string) $data['attendance_date'], self::ATTENDANCE_TIMEZONE)->toDateString();
+        }
+
+        if (! empty($data['time_in'])) {
+            $timeInManila = Carbon::parse((string) $data['time_in'], self::ATTENDANCE_TIMEZONE);
+            $data['time_in'] = $timeInManila->copy()->utc();
+            $data['attendance_date'] = $data['attendance_date'] ?? $timeInManila->toDateString();
+        }
+
+        if (! empty($data['time_out'])) {
+            $data['time_out'] = Carbon::parse((string) $data['time_out'], self::ATTENDANCE_TIMEZONE)->utc();
         }
 
         return $data;
@@ -240,14 +469,14 @@ class AttendanceLogService
             'branch_id' => (int) $data['branch_id'],
             'branch_name' => $branchName,
             'attendance_date' => (string) $data['attendance_date'],
-            'captured_at' => $capturedAt ? (string) $capturedAt : null,
+            'captured_at' => $capturedAt ? Carbon::parse((string) $capturedAt)->timezone(self::ATTENDANCE_TIMEZONE)->toIso8601String() : null,
             'gps_latitude' => $latitude !== null ? (string) $latitude : null,
             'gps_longitude' => $longitude !== null ? (string) $longitude : null,
             'device_info_raw' => $deviceInfo,
             'ip_address' => $ipAddress,
             'file_path' => $filePath,
             'image_sha256' => $filePath ? $this->hashStoredFile($filePath) : null,
-            'recorded_at' => now()->toIso8601String(),
+            'recorded_at' => now()->timezone(self::ATTENDANCE_TIMEZONE)->toIso8601String(),
         ];
 
         return [

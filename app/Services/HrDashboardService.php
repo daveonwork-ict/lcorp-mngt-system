@@ -10,6 +10,8 @@ class HrDashboardService
 {
     public function summary(): array
     {
+        $todayManila = now('Asia/Manila')->toDateString();
+
         $totalEmployees = DB::table('users')->count();
         $activeEmployees = DB::table('users')
             ->where(function ($query): void {
@@ -31,8 +33,22 @@ class HrDashboardService
 
         $attendanceToday = Schema::hasTable('attendance_logs')
             ? DB::table('attendance_logs')
-                ->whereDate('attendance_date', now()->toDateString())
+                ->whereDate('attendance_date', $todayManila)
                 ->where('attendance_status', 'present')
+                ->count()
+            : 0;
+
+        $clockedInToday = Schema::hasTable('attendance_logs')
+            ? DB::table('attendance_logs')
+                ->whereDate('attendance_date', $todayManila)
+                ->whereNotNull('time_in')
+                ->count()
+            : 0;
+
+        $clockedOutToday = Schema::hasTable('attendance_logs')
+            ? DB::table('attendance_logs')
+                ->whereDate('attendance_date', $todayManila)
+                ->whereNotNull('time_out')
                 ->count()
             : 0;
 
@@ -46,6 +62,8 @@ class HrDashboardService
                 ['label' => 'Pending Payroll', 'value' => number_format($pendingPayroll), 'trend' => 'Awaiting approval'],
                 ['label' => 'Active Loans', 'value' => number_format($activeLoans), 'trend' => 'Loan monitoring'],
                 ['label' => 'Attendance Today', 'value' => number_format($attendanceToday), 'trend' => 'Present logs'],
+                ['label' => 'Clocked In Today (UTC+8)', 'value' => number_format($clockedInToday), 'trend' => 'With clock-in stamp'],
+                ['label' => 'Clocked Out Today (UTC+8)', 'value' => number_format($clockedOutToday), 'trend' => 'With clock-out stamp'],
                 ['label' => 'Absent Today', 'value' => number_format($absentToday), 'trend' => 'Needs follow-up'],
             ],
             'charts' => [
