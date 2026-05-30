@@ -215,7 +215,7 @@ class BranchDashboardController extends Controller
                 'next_schedule' => $this->formatScheduleSummary($nextSchedule),
                 'today_shift_status' => $this->buildTodayShiftStatus($todaySchedule, $todayAttendance),
                 'today_attendance_status' => $this->buildTodayAttendanceStatus($todayAttendance),
-                'last_sync_at' => $this->resolveLastSyncTimestamp($latestAttendance, $todaySchedule, $nextSchedule),
+                'last_sync' => $this->resolveLastSyncMeta($latestAttendance, $todaySchedule, $nextSchedule),
                 'quick_links' => $quickLinks,
             ],
             'latest_attendance' => $latestAttendance,
@@ -300,21 +300,37 @@ class BranchDashboardController extends Controller
         return ['label' => 'Attendance Complete', 'tone' => 'primary'];
     }
 
-    private function resolveLastSyncTimestamp(?AttendanceLog $latestAttendance, ?EmployeeSchedule $todaySchedule, ?EmployeeSchedule $nextSchedule): ?string
+    private function resolveLastSyncMeta(?AttendanceLog $latestAttendance, ?EmployeeSchedule $todaySchedule, ?EmployeeSchedule $nextSchedule): ?array
     {
-        $timestamps = array_filter([
-            $latestAttendance?->updated_at,
-            $todaySchedule?->updated_at,
-            $nextSchedule?->updated_at,
-        ]);
+        $candidates = [
+            ['source' => 'Attendance', 'timestamp' => $latestAttendance?->updated_at, 'rank' => 0],
+            ['source' => 'Today Schedule', 'timestamp' => $todaySchedule?->updated_at, 'rank' => 1],
+            ['source' => 'Next Schedule', 'timestamp' => $nextSchedule?->updated_at, 'rank' => 2],
+        ];
 
-        if ($timestamps === []) {
+        $candidates = array_values(array_filter($candidates, fn (array $candidate) => $candidate['timestamp'] !== null));
+
+        if ($candidates === []) {
             return null;
         }
 
-        return collect($timestamps)
-            ->sortDesc()
-            ->first()
-            ?->format('Y-m-d H:i');
+        usort($candidates, function (array $left, array $right): int {
+            $leftTimestamp = $left['timestamp'] instanceof Carbon ? $left['timestamp'] : Carbon::parse($left['timestamp']);
+            $rightTimestamp = $right['timestamp'] instanceof Carbon ? $right['timestamp'] : Carbon::parse($right['timestamp']);
+
+            if ($leftTimestamp->equalTo($rightTimestamp)) {
+                return $left['rank'] <=> $right['rank'];
+            }
+
+            return $leftTimestamp->greaterThan($rightTimestamp) ? -1 : 1;
+        });
+
+        $latest = $candidates[0];
+        $latestTimestamp = $latest['timestamp'] instanceof Carbon ? $latest['timestamp'] : Carbon::parse($latest['timestamp']);
+
+        return [
+            'at' => $latestTimestamp->format('Y-m-d H:i'),
+            'source' => $latest['source'],
+        ];
     }
 }

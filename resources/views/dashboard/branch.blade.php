@@ -78,8 +78,9 @@
                                     </dd>
                                     <dt class="col-sm-4">Last Attendance Sync</dt>
                                     <dd class="col-sm-8">
-                                        @if($employeePanel['profile']['last_sync_at'])
-                                            {{ $employeePanel['profile']['last_sync_at'] }}
+                                        @if($employeePanel['profile']['last_sync'])
+                                            {{ $employeePanel['profile']['last_sync']['at'] }}
+                                            <span class="text-muted">(Source: {{ $employeePanel['profile']['last_sync']['source'] }})</span>
                                         @else
                                             <span class="text-muted">Not synced yet</span>
                                         @endif
