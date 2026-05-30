@@ -56,7 +56,7 @@
             <div class="form-row">
                 <div class="col-md-3 mb-3">
                     <label>Schedule</label>
-                    @if ($isCreateSelfService)
+                    @if ($selfService)
                         <input type="hidden" name="schedule_id" value="{{ $selectedSchedule?->id }}">
                         <input class="form-control" value="{{ $selectedSchedule ? (optional($selectedSchedule->schedule_date)->format('Y-m-d').' | '.substr((string) $selectedSchedule->time_in, 0, 5).' - '.substr((string) $selectedSchedule->time_out, 0, 5)) : 'No schedule' }}" readonly>
                     @else

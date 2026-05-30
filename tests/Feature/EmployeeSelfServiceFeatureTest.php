@@ -259,6 +259,46 @@ class EmployeeSelfServiceFeatureTest extends TestCase
             ->assertDontSee($otherUser->display_name);
     }
 
+    public function test_self_service_user_cannot_edit_attendance_schedule(): void
+    {
+        [$branch, $staffUser, $otherUser] = $this->makeStaffUsers();
+
+        $attendance = AttendanceLog::query()->create([
+            'user_id' => $staffUser->id,
+            'branch_id' => $branch->id,
+            'attendance_date' => now('Asia/Manila')->toDateString(),
+            'schedule_id' => EmployeeSchedule::query()->where('user_id', $staffUser->id)->value('id'),
+            'time_in' => now()->subHour(),
+            'attendance_status' => 'present',
+            'device_info_in' => ['raw' => 'Staff Device'],
+        ]);
+
+        $otherSchedule = EmployeeSchedule::query()->create([
+            'user_id' => $otherUser->id,
+            'branch_id' => $branch->id,
+            'schedule_date' => now('Asia/Manila')->toDateString(),
+            'schedule_type' => 'fixed',
+            'time_in' => '10:00',
+            'time_out' => '19:00',
+            'is_rest_day' => false,
+        ]);
+
+        $this->actingAs($staffUser)
+            ->put(route('hr.attendance.update', $attendance), [
+                'user_id' => $staffUser->id,
+                'branch_id' => $branch->id,
+                'attendance_date' => now('Asia/Manila')->toDateString(),
+                'schedule_id' => $otherSchedule->id,
+                'time_in' => now('Asia/Manila')->format('Y-m-d H:i:s'),
+                'device_info_in' => 'Staff Device',
+                'attendance_status' => 'present',
+            ])
+            ->assertSessionHasErrors('schedule_id');
+
+        $attendance->refresh();
+        $this->assertNotSame($otherSchedule->id, $attendance->schedule_id);
+    }
+
     private function makeStaffUsers(): array
     {
         $branch = Branch::query()->where('code', 'MAIN')->firstOrFail();

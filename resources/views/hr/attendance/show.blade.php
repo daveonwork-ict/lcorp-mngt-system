@@ -9,6 +9,7 @@
         'invalid' => 'danger',
         'missing' => 'secondary',
     ];
+    $isSelfServiceRole = auth()->check() && ! in_array(auth()->user()?->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
 @endphp
 
 <div class="row">
@@ -85,6 +86,8 @@
         <button class="btn btn-outline-info">Reverify</button>
     </form>
     <a href="{{ route('hr.attendance.index') }}" class="btn btn-default">Back</a>
-    <a href="{{ route('hr.attendance.edit', $attendanceLog) }}" class="btn btn-primary">Edit Attendance</a>
+    @if (! $isSelfServiceRole)
+        <a href="{{ route('hr.attendance.edit', $attendanceLog) }}" class="btn btn-primary">Edit Attendance</a>
+    @endif
 </div>
 @endsection

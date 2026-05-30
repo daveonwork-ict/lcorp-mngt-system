@@ -2,6 +2,9 @@
 
 @section('page_title', 'Attendance Monitoring')
 @section('content')
+@php
+    $isSelfServiceRole = auth()->check() && ! in_array(auth()->user()?->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
+@endphp
 <div class="card">
     <div class="card-header">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
@@ -37,7 +40,9 @@
                     <td>{{ $log->selfie_time_in_path ? 'Captured' : 'N/A' }}</td>
                     <td>
                         <a href="{{ route('hr.attendance.show', $log) }}" class="btn btn-xs btn-outline-secondary">View</a>
-                        <a href="{{ route('hr.attendance.edit', $log) }}" class="btn btn-xs btn-outline-primary">Edit</a>
+                        @if (! $isSelfServiceRole)
+                            <a href="{{ route('hr.attendance.edit', $log) }}" class="btn btn-xs btn-outline-primary">Edit</a>
+                        @endif
                     </td>
                 </tr>
             @empty

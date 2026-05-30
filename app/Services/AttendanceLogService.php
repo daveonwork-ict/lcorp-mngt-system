@@ -142,6 +142,19 @@ class AttendanceLogService
         $data = $this->normalizeAttendanceTimes($data);
         $this->ensureBranchAccess((int) $data['branch_id']);
 
+        if (! $this->canManageAttendanceSchedule()) {
+            $incomingScheduleId = array_key_exists('schedule_id', $data) ? (int) ($data['schedule_id'] ?? 0) : (int) ($attendanceLog->schedule_id ?? 0);
+            $currentScheduleId = (int) ($attendanceLog->schedule_id ?? 0);
+
+            if ($incomingScheduleId !== $currentScheduleId) {
+                throw ValidationException::withMessages([
+                    'schedule_id' => 'You are not allowed to edit attendance schedule.',
+                ]);
+            }
+
+            $data['schedule_id'] = $attendanceLog->schedule_id;
+        }
+
         $before = $attendanceLog->toArray();
 
         if (! empty($data['selfie_time_in'])) {
@@ -208,6 +221,21 @@ class AttendanceLogService
         $user = Auth::user();
 
         return (bool) $user && ! in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true);
+    }
+
+    private function canManageAttendanceSchedule(): bool
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($user->role?->code, [config('rms.owner_role_code'), 'super_admin', 'branch_manager'], true)) {
+            return true;
+        }
+
+        return $user->hasPermission('manage_schedules') || $user->hasPermission('manage_attendance');
     }
 
     private function resolveSchedule(array $data): ?EmployeeSchedule
